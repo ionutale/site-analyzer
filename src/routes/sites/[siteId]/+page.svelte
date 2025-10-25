@@ -31,6 +31,7 @@
 	let pages = $state<PageItem[]>([]);
 	let linksTotal = $state(0);
 	let pagesTotal = $state(0);
+	let resumeMsg = $state<string | null>(null);
 
 	// filters
 	let lq = $state('');
@@ -99,6 +100,23 @@
 			await fetchPages();
 		}
 	}
+
+	async function resume(mode: 'all' | 'retry-errors' = 'all') {
+		const res = await fetch(
+			`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
+			{ method: 'POST' }
+		);
+		if (res.ok) {
+			const data = await res.json();
+			resumeMsg = `Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
+				data.retriedErrors ?? 0
+			}`;
+			setTimeout(() => (resumeMsg = null), 4000);
+			await fetchStatus();
+			await fetchLinks();
+			await fetchPages();
+		}
+	}
 </script>
 
 <section class="space-y-6">
@@ -106,11 +124,21 @@
 		<h1 class="text-3xl font-bold">Site: <code>{siteId}</code></h1>
 		<div class="flex items-center gap-2">
 			<a class="btn" href={resolve(`/sites/${siteId}/seo`)}>SEO</a>
+			<div class="btn-group">
+				<button class="btn" onclick={() => resume('all')}>Resume all</button>
+				<button class="btn" onclick={() => resume('retry-errors')}>Retry errors</button>
+			</div>
 			{#if dev}
 				<button class="btn btn-error" onclick={resetSite}>Reset site</button>
 			{/if}
 		</div>
 	</div>
+
+	{#if resumeMsg}
+		<div class="alert alert-success">
+			<span>{resumeMsg}</span>
+		</div>
+	{/if}
 
 	{#if stats}
 		<div class="card bg-base-200">
@@ -256,7 +284,7 @@
 						{#each links as it (it._id)}
 							<tr>
 								<td class="max-w-[420px] truncate">
-									<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+									<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 								</td>
 								<td
 									><span
@@ -396,7 +424,7 @@
 							<tr>
 								<td class="max-w-[320px] truncate">{pg.title || '—'}</td>
 								<td class="max-w-[420px] truncate">
-									<a class="link" href={resolve(pg.url)} target="_blank" rel="noopener">{pg.url}</a>
+									<a class="link" href={pg.url} target="_blank" rel="noopener">{pg.url}</a>
 								</td>
 								<td>{pg.statusCode ?? 'n/a'}</td>
 								<td>{new Date(pg.fetchedAt).toLocaleString()}</td>

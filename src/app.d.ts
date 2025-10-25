@@ -8,6 +8,13 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	// Svelte 5 reactive helper globals used in templates
+	// Provide ambient declarations so TypeScript recognizes them.
+	// At runtime, Svelte transforms these; we only need types here.
+	// See: https://svelte.dev/docs/svelte/compat#reactivity-primitives
+	const SvelteSet: SetConstructor;
+	const SvelteURLSearchParams: typeof URLSearchParams;
 }
 
 export {};

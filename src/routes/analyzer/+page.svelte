@@ -38,6 +38,7 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new SvelteSet());
+	let resumeMsg = $state<string | null>(null);
 
 	async function ingest() {
 		errorMsg = null;
@@ -152,6 +153,23 @@
 		}
 	}
 
+	async function resume(mode: 'all' | 'retry-errors' = 'all') {
+		if (!siteId) return;
+		const res = await fetch(
+			`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
+			{ method: 'POST' }
+		);
+		if (res.ok) {
+			const data = await res.json();
+			resumeMsg = `Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
+				data.retriedErrors ?? 0
+			}`;
+			setTimeout(() => (resumeMsg = null), 4000);
+			await fetchStatus();
+			await fetchLinks();
+		}
+	}
+
 	onMount(() => () => timer && clearInterval(timer));
 </script>
 
@@ -191,11 +209,23 @@
 		</div>
 	{/if}
 
+	{#if resumeMsg}
+		<div class="alert alert-success">
+			<span>{resumeMsg}</span>
+		</div>
+	{/if}
+
 	{#if siteId}
 		<div class="card bg-base-200">
 			<div class="card-body">
 				<div class="flex items-center justify-between">
 					<h2 class="card-title">Status</h2>
+					<div class="btn-group">
+						<button class="btn" type="button" onclick={() => resume('all')}>Resume all</button>
+						<button class="btn" type="button" onclick={() => resume('retry-errors')}
+							>Retry errors</button
+						>
+					</div>
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
 				{#if stats}
@@ -365,7 +395,7 @@
 										/></td
 									>
 									<td class="max-w-[420px] truncate">
-										<a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+										<a class="link" href={it.url} target="_blank" rel="noopener"
 											>{it.url}</a
 										>
 									</td>
