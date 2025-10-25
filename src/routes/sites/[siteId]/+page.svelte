@@ -55,9 +55,12 @@
 <section class="space-y-6">
   <div class="flex items-center justify-between">
     <h1 class="text-3xl font-bold">Site: <code>{siteId}</code></h1>
-    {#if dev}
-      <button class="btn btn-error" onclick={resetSite}>Reset site</button>
-    {/if}
+    <div class="flex items-center gap-2">
+      <a class="btn" href={`/sites/${siteId}/seo`}>SEO</a>
+      {#if dev}
+        <button class="btn btn-error" onclick={resetSite}>Reset site</button>
+      {/if}
+    </div>
   </div>
 
   {#if stats}

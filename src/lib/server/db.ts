@@ -52,6 +52,8 @@ export interface PageDoc extends Document {
   contentType?: string | null;
   title?: string | null;
   meta?: Record<string, string> | null;
+  metaDescription?: string | null;
+  loadTimeMs?: number | null;
   content: string; // HTML or text
   textExcerpt?: string;
   contentHash?: string;

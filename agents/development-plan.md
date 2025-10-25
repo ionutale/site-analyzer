@@ -5,6 +5,8 @@ This plan implements a small site analyzer that:
 - Fetches the site's `sitemap.xml` and saves all URLs to MongoDB
 - Runs a worker that reads queued URLs and uses Playwright to fetch each page's content
 - Displays a simple dashboard to monitor link statuses and view stored content
+- Provides a Sites section to browse domains and per-site dashboards
+- Includes SEO analysis to surface common issues (missing title/meta, slow pages, non-200s)
 
 MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-app`. You can change these in `docker-compose.yml` or `.env`.
 
@@ -24,6 +26,8 @@ MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-ap
   - `WORKER_CONCURRENCY=3`
   - `WORKER_MAX_ATTEMPTS=3`
   - `LEASE_TIMEOUT_MS=900000` (15 min)
+  - Optional: `PLAYWRIGHT_SCREENSHOTS=true` to capture page screenshots under `static/screenshots`
+  - Optional: `DEV_API_TOKEN=...` to protect dev endpoints via `x-dev-token` header
 
 Note: If you keep Mongo auth enabled, add `MONGODB_URI` with creds accordingly.
 
@@ -55,6 +59,8 @@ Indexes:
 - `contentType: string | null`
 - `title: string | null`
 - `meta: Record<string, string> | null` (e.g., description)
+- `metaDescription: string | null`
+- `loadTimeMs: number | null`
 - `content: string` (HTML/text; cap size)
 - `textExcerpt: string` (sanitized preview for UI)
 - Optional: `contentHash: string`, `screenshotPath: string | null`
@@ -97,10 +103,25 @@ Indexes:
 - `GET src/routes/api/links/+server.ts`
   - Query: `?siteId=&status=&page=&limit=&q=`
   - Paginated list of links (with basic search by URL)
+  - Supports `sortBy` (updatedAt|url|status|attempts) and `sortDir` (asc|desc)
+  - Includes `pageId` when a stored page exists
 
 - `GET src/routes/api/page/[id]/+server.ts`
   - Params: `id` (Mongo `_id` string)
   - Returns the stored page record (sanitized preview fields for UI consumption)
+
+- `GET src/routes/api/health/+server.ts`
+  - Pings DB for quick readiness checks
+
+- Dev convenience endpoints (guarded in production; optional token via `DEV_API_TOKEN`):
+  - `POST src/routes/api/process-batch/+server.ts` — processes a small batch immediately
+  - `POST src/routes/api/reset-site/+server.ts` — deletes links/pages for a site
+  - `POST src/routes/api/links/batch/+server.ts` — batch retry/purge selected link ids
+
+- Sites & pages APIs:
+  - `GET src/routes/api/sites/+server.ts` — list all sites with counts and lastUpdated
+  - `GET src/routes/api/pages/+server.ts` — list pages per site with pagination/search/sort
+  - `GET src/routes/api/seo/+server.ts` — SEO aggregates for a site (missing title/meta, slow pages by threshold, non-200)
 
 ## Worker process
 
@@ -112,7 +133,9 @@ Indexes:
 - Fetching implementation:
   - Launch Chromium headless once per worker (reuse browser)
   - For each URL: `page.goto(url, { waitUntil: 'networkidle', timeout: ... })`
-  - Extract: status code, title, meta description, content HTML, build `textExcerpt`
+  - Extract: status code, title, meta description, content type, content HTML, build `textExcerpt`
+  - Measure `loadTimeMs` as wall-clock duration of navigation+render
+  - Optional: capture screenshot when enabled
   - Cap content length (e.g., 2–4 MB), compute hash optionally
   - Upsert in `pages` and set `links.status = 'done'` or `'error'` with `lastError`
 
@@ -122,8 +145,9 @@ Optional enhancements:
 
 ## Frontend (SvelteKit)
 
-### Navigation
-- Add a link in `src/routes/+layout.svelte` to `/analyzer`
+### Navigation & layout
+- Add a side drawer layout with links to Home, Analyzer, Sites
+- Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
 
 ### Analyzer page
 - File: `src/routes/analyzer/+page.svelte`
@@ -131,12 +155,20 @@ Optional enhancements:
   - Form to submit site URL -> calls `POST /api/ingest`
   - Status summary (counts by status) -> calls `/api/status?siteId=...`, auto-refresh every 5–10s
   - Table of links with filters: status, search, pagination -> `/api/links?...`
+  - Column sorting and quick "only errors" toggle
+  - Multi-select with batch actions: retry, purge errors
   - Each row links to content view page
 
 ### Content view page
 - File: `src/routes/analyzer/page/[id]/+page.svelte`
 - Fetch via `/api/page/[id]`
 - Show: status code, fetchedAt, title, meta, and a sanitized preview (`textExcerpt`); optional toggle for raw HTML in a safe container
+  - Show screenshot when available
+
+### Sites section
+- `/sites` — list all sites with counts
+- `/sites/[siteId]` — per-site dashboard with status cards, links table and pages table (filters/sort/pagination)
+- `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
 
 ## Dependencies to add
 - `mongodb` (official driver)
@@ -160,11 +192,13 @@ Optional enhancements:
 - Integration tests
   - `POST /api/ingest` bulk upserts with dedupe
   - Worker processes a batch and writes to `pages`; `links` move to `done`/`error`
+  - SEO API returns expected aggregates given seeded pages
   - `/api/status` and `/api/links` return expected aggregates
 
 - E2E (Playwright)
   - Analyzer UI: submit URL, see pending -> done as worker runs
-  - Content view displays sanitized preview and metadata
+  - Content view displays sanitized preview, metadata, and screenshot when enabled
+  - Sites list and site detail navigation works; SEO dashboard shows expected counts
 
 ## Milestones & acceptance criteria
 
@@ -181,6 +215,8 @@ Optional enhancements:
 ### Phase 3: Robustness + UX polish
 - Lease timeout requeue + backoff retries
 - Error visibility per link; optional screenshots
+- Batch operations on links (retry/purge)
+- SEO dashboard with missing title/meta, slow pages, and non-200 counts
 - Indexes in place; content size limits enforced
 
 ## Risks & mitigations
@@ -192,7 +228,7 @@ Optional enhancements:
 ## Operational notes
 - Dev convenience: run Mongo without auth at `mongodb://localhost:27017` and DB `sv-app`
 - If using auth, mirror credentials in `.env` and update connection strings
-- Consider a manual "Process batch" endpoint for dev: `POST /api/worker/tick?limit=10` to avoid always-on loops
+- Dev endpoints available for convenience; protect with `DEV_API_TOKEN` if sharing environments
 
 ## File scaffold (to be created in implementation)
 - `src/lib/server/db.ts`

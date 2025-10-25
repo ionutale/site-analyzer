@@ -37,11 +37,16 @@ async function leaseOne(): Promise<LinkDoc | null> {
 async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
   const pg = await b.newPage();
   try {
+    const t0 = Date.now();
     const resp = await pg.goto(doc.url, { waitUntil: 'networkidle', timeout: 45000 });
+    const loadTimeMs = Date.now() - t0;
     const statusCode = resp?.status() ?? null;
     const contentType = resp?.headers()['content-type'] ?? null;
     const title = await pg.title();
     const html = await pg.content();
+    const metaDescription = await pg
+      .$eval('meta[name="description"], meta[property="og:description"]', (el: Element) => (el as HTMLMetaElement).content || '', { strict: false })
+      .catch(() => '');
 
     const excerpt = html.slice(0, 2000);
     const hash = crypto.createHash('sha256').update(html).digest('hex');
@@ -71,6 +76,8 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
           fetchedAt: now,
           contentType,
           title,
+          metaDescription: metaDescription || null,
+          loadTimeMs,
           content: html,
           textExcerpt: excerpt,
           contentHash: hash,
