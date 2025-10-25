@@ -1,4 +1,5 @@
-import { MongoClient, Db, Collection, Document } from 'mongodb';
+import { MongoClient } from 'mongodb';
+import type { Db, Collection, Document } from 'mongodb';
 import { env } from '$env/dynamic/private';
 
 let clientPromise: Promise<MongoClient> | null = null;
