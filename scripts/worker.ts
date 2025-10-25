@@ -54,7 +54,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
         const fpath = path.join(SCREENSHOTS_DIR, fname);
         await pg.screenshot({ path: fpath, type: 'jpeg', fullPage: true, quality: 60 });
         screenshotPath = `/screenshots/${fname}`;
-      } catch (e) {
+      } catch {
         // ignore screenshot errors
       }
     }
