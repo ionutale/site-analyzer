@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   mongodb:
@@ -6,7 +6,7 @@ services:
     container_name: site-analyzer-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - '27017:27017'
     environment:
       # Enable auth and set default DB
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -18,7 +18,7 @@ services:
       # Auto-init scripts (create non-root application user, seed data, etc.)
       - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5

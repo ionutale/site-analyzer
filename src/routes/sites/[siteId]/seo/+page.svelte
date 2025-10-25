@@ -1,239 +1,292 @@
 <script lang="ts">
-  let { params } = $props();
-  const siteId = params.siteId as string;
-  let slowMs = $state(3000);
-  let data = $state<any | null>(null);
-  let errorMsg = $state<string | null>(null);
+	let { params } = $props();
+	const siteId = params.siteId as string;
+	let slowMs = $state(3000);
+	let data = $state<any | null>(null);
+	let errorMsg = $state<string | null>(null);
 
-  async function loadSeo() {
-    errorMsg = null;
-    try {
-      const res = await fetch(`/api/seo?siteId=${encodeURIComponent(siteId)}&slowMs=${slowMs}`);
-      if (!res.ok) throw new Error('Failed to load SEO data');
-      data = await res.json();
-    } catch (e: any) {
-      errorMsg = e?.message || 'Unknown error';
-    }
-  }
-  loadSeo();
+	async function loadSeo() {
+		errorMsg = null;
+		try {
+			const res = await fetch(`/api/seo?siteId=${encodeURIComponent(siteId)}&slowMs=${slowMs}`);
+			if (!res.ok) throw new Error('Failed to load SEO data');
+			data = await res.json();
+		} catch (e: any) {
+			errorMsg = e?.message || 'Unknown error';
+		}
+	}
+	loadSeo();
 </script>
 
 <section class="space-y-6">
-  <div class="flex items-center justify-between">
-    <h1 class="text-3xl font-bold">SEO: <code>{siteId}</code></h1>
-    <a href={`/sites/${siteId}`} class="btn">Back to site</a>
-  </div>
+	<div class="flex items-center justify-between">
+		<h1 class="text-3xl font-bold">SEO: <code>{siteId}</code></h1>
+		<a href={`/sites/${siteId}`} class="btn">Back to site</a>
+	</div>
 
-  {#if errorMsg}
-    <div class="alert alert-error"><span>{errorMsg}</span></div>
-  {/if}
+	{#if errorMsg}
+		<div class="alert alert-error"><span>{errorMsg}</span></div>
+	{/if}
 
-  {#if data}
-    <div class="card bg-base-200">
-      <div class="card-body">
-        <div class="flex flex-wrap gap-4 items-end">
-          <div class="form-control w-48">
-            <label class="label" for="th"><span class="label-text">Slow threshold (ms)</span></label>
-            <input id="th" class="input input-bordered" type="number" min="0" bind:value={slowMs} onkeydown={(e)=> e.key==='Enter' && loadSeo()} />
-          </div>
-          <button class="btn" onclick={loadSeo}>Reload</button>
-        </div>
-        <ul class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 mt-4">
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Missing title</div><div class="stat-value text-lg">{data.issues.missingTitle}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Missing meta</div><div class="stat-value text-lg">{data.issues.missingMeta}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Slow (&gt;{data.thresholds.slowMs}ms)</div><div class="stat-value text-lg">{data.issues.slow}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Non-200</div><div class="stat-value text-lg">{data.issues.non200}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Missing canonical</div><div class="stat-value text-lg">{data.issues.missingCanonical}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Title too short (&lt;{data.thresholds.minTitleLen})</div><div class="stat-value text-lg">{data.issues.titleTooShort}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Title too long (&gt;{data.thresholds.maxTitleLen})</div><div class="stat-value text-lg">{data.issues.titleTooLong}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Duplicate titles</div><div class="stat-value text-lg">{data.issues.duplicateTitles}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Duplicate meta</div><div class="stat-value text-lg">{data.issues.duplicateMeta}</div></li>
-        </ul>
-      </div>
-    </div>
+	{#if data}
+		<div class="card bg-base-200">
+			<div class="card-body">
+				<div class="flex flex-wrap items-end gap-4">
+					<div class="form-control w-48">
+						<label class="label" for="th"><span class="label-text">Slow threshold (ms)</span></label
+						>
+						<input
+							id="th"
+							class="input-bordered input"
+							type="number"
+							min="0"
+							bind:value={slowMs}
+							onkeydown={(e) => e.key === 'Enter' && loadSeo()}
+						/>
+					</div>
+					<button class="btn" onclick={loadSeo}>Reload</button>
+				</div>
+				<ul class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Missing title</div>
+						<div class="stat-value text-lg">{data.issues.missingTitle}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Missing meta</div>
+						<div class="stat-value text-lg">{data.issues.missingMeta}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Slow (&gt;{data.thresholds.slowMs}ms)</div>
+						<div class="stat-value text-lg">{data.issues.slow}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Non-200</div>
+						<div class="stat-value text-lg">{data.issues.non200}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Missing canonical</div>
+						<div class="stat-value text-lg">{data.issues.missingCanonical}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Title too short (&lt;{data.thresholds.minTitleLen})</div>
+						<div class="stat-value text-lg">{data.issues.titleTooShort}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Title too long (&gt;{data.thresholds.maxTitleLen})</div>
+						<div class="stat-value text-lg">{data.issues.titleTooLong}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Duplicate titles</div>
+						<div class="stat-value text-lg">{data.issues.duplicateTitles}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Duplicate meta</div>
+						<div class="stat-value text-lg">{data.issues.duplicateMeta}</div>
+					</li>
+				</ul>
+			</div>
+		</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Top slow pages</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>URL</th><th>Load (ms)</th></tr></thead>
-              <tbody>
-                {#each data.samples.slowPages as it}
-                  <tr>
-                    <td class="max-w-[420px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
-                    <td>{it.loadTimeMs}</td>
-                  </tr>
-                {/each}
-                {#if data.samples.slowPages.length === 0}
-                  <tr><td colspan="2" class="text-center opacity-70">No slow pages</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Missing title</h2>
-          <ul class="list-disc ml-5">
-            {#each data.samples.missingTitlePages as it}
-              <li class="truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></li>
-            {/each}
-            {#if data.samples.missingTitlePages.length === 0}
-              <li class="opacity-70">None</li>
-            {/if}
-          </ul>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Missing meta description</h2>
-          <ul class="list-disc ml-5">
-            {#each data.samples.missingMetaPages as it}
-              <li class="truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></li>
-            {/each}
-            {#if data.samples.missingMetaPages.length === 0}
-              <li class="opacity-70">None</li>
-            {/if}
-          </ul>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Non-200 pages</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>URL</th><th>Status</th></tr></thead>
-              <tbody>
-                {#each data.samples.non200Pages as it}
-                  <tr>
-                    <td class="max-w-[420px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
-                    <td>{it.statusCode ?? 'n/a'}</td>
-                  </tr>
-                {/each}
-                {#if data.samples.non200Pages.length === 0}
-                  <tr><td colspan="2" class="text-center opacity-70">None</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Missing canonical URL</h2>
-          <ul class="list-disc ml-5">
-            {#each data.samples.missingCanonicalPages as it}
-              <li class="truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></li>
-            {/each}
-            {#if data.samples.missingCanonicalPages.length === 0}
-              <li class="opacity-70">None</li>
-            {/if}
-          </ul>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Short titles (&lt;{data.thresholds.minTitleLen} chars)</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
-              <tbody>
-                {#each data.samples.shortTitlePages as it}
-                  <tr>
-                    <td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
-                    <td>{it.titleLength ?? 'n/a'}</td>
-                    <td class="max-w-[320px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
-                  </tr>
-                {/each}
-                {#if data.samples.shortTitlePages.length === 0}
-                  <tr><td colspan="3" class="text-center opacity-70">None</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Long titles (&gt;{data.thresholds.maxTitleLen} chars)</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
-              <tbody>
-                {#each data.samples.longTitlePages as it}
-                  <tr>
-                    <td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
-                    <td>{it.titleLength ?? 'n/a'}</td>
-                    <td class="max-w-[320px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
-                  </tr>
-                {/each}
-                {#if data.samples.longTitlePages.length === 0}
-                  <tr><td colspan="3" class="text-center opacity-70">None</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Duplicate titles</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>Title</th><th>Count</th><th>Sample URLs</th></tr></thead>
-              <tbody>
-                {#each data.samples.duplicateTitles as it}
-                  <tr>
-                    <td class="max-w-[260px] truncate">{it.title}</td>
-                    <td>{it.count}</td>
-                    <td>
-                      <ul class="list-disc ml-5">
-                        {#each it.urls as u}
-                          <li class="truncate max-w-[320px]"><a class="link" href={u} target="_blank" rel="noopener">{u}</a></li>
-                        {/each}
-                      </ul>
-                    </td>
-                  </tr>
-                {/each}
-                {#if data.samples.duplicateTitles.length === 0}
-                  <tr><td colspan="3" class="text-center opacity-70">None</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title">Duplicate meta descriptions</h2>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead><tr><th>Description</th><th>Count</th><th>Sample URLs</th></tr></thead>
-              <tbody>
-                {#each data.samples.duplicateMeta as it}
-                  <tr>
-                    <td class="max-w-[260px] truncate">{it.metaDescription}</td>
-                    <td>{it.count}</td>
-                    <td>
-                      <ul class="list-disc ml-5">
-                        {#each it.urls as u}
-                          <li class="truncate max-w-[320px]"><a class="link" href={u} target="_blank" rel="noopener">{u}</a></li>
-                        {/each}
-                      </ul>
-                    </td>
-                  </tr>
-                {/each}
-                {#if data.samples.duplicateMeta.length === 0}
-                  <tr><td colspan="3" class="text-center opacity-70">None</td></tr>
-                {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  {/if}
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Top slow pages</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>URL</th><th>Load (ms)</th></tr></thead>
+							<tbody>
+								{#each data.samples.slowPages as it}
+									<tr>
+										<td class="max-w-[420px] truncate"
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+										>
+										<td>{it.loadTimeMs}</td>
+									</tr>
+								{/each}
+								{#if data.samples.slowPages.length === 0}
+									<tr><td colspan="2" class="text-center opacity-70">No slow pages</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Missing title</h2>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.missingTitlePages as it}
+							<li class="truncate">
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+							</li>
+						{/each}
+						{#if data.samples.missingTitlePages.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Missing meta description</h2>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.missingMetaPages as it}
+							<li class="truncate">
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+							</li>
+						{/each}
+						{#if data.samples.missingMetaPages.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Non-200 pages</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>URL</th><th>Status</th></tr></thead>
+							<tbody>
+								{#each data.samples.non200Pages as it}
+									<tr>
+										<td class="max-w-[420px] truncate"
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+										>
+										<td>{it.statusCode ?? 'n/a'}</td>
+									</tr>
+								{/each}
+								{#if data.samples.non200Pages.length === 0}
+									<tr><td colspan="2" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Missing canonical URL</h2>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.missingCanonicalPages as it}
+							<li class="truncate">
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+							</li>
+						{/each}
+						{#if data.samples.missingCanonicalPages.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Short titles (&lt;{data.thresholds.minTitleLen} chars)</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
+							<tbody>
+								{#each data.samples.shortTitlePages as it}
+									<tr>
+										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
+										<td>{it.titleLength ?? 'n/a'}</td>
+										<td class="max-w-[320px] truncate"
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+										>
+									</tr>
+								{/each}
+								{#if data.samples.shortTitlePages.length === 0}
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Long titles (&gt;{data.thresholds.maxTitleLen} chars)</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
+							<tbody>
+								{#each data.samples.longTitlePages as it}
+									<tr>
+										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
+										<td>{it.titleLength ?? 'n/a'}</td>
+										<td class="max-w-[320px] truncate"
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+										>
+									</tr>
+								{/each}
+								{#if data.samples.longTitlePages.length === 0}
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Duplicate titles</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Title</th><th>Count</th><th>Sample URLs</th></tr></thead>
+							<tbody>
+								{#each data.samples.duplicateTitles as it}
+									<tr>
+										<td class="max-w-[260px] truncate">{it.title}</td>
+										<td>{it.count}</td>
+										<td>
+											<ul class="ml-5 list-disc">
+												{#each it.urls as u}
+													<li class="max-w-[320px] truncate">
+														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
+													</li>
+												{/each}
+											</ul>
+										</td>
+									</tr>
+								{/each}
+								{#if data.samples.duplicateTitles.length === 0}
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Duplicate meta descriptions</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Description</th><th>Count</th><th>Sample URLs</th></tr></thead>
+							<tbody>
+								{#each data.samples.duplicateMeta as it}
+									<tr>
+										<td class="max-w-[260px] truncate">{it.metaDescription}</td>
+										<td>{it.count}</td>
+										<td>
+											<ul class="ml-5 list-disc">
+												{#each it.urls as u}
+													<li class="max-w-[320px] truncate">
+														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
+													</li>
+												{/each}
+											</ul>
+										</td>
+									</tr>
+								{/each}
+								{#if data.samples.duplicateMeta.length === 0}
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 </section>

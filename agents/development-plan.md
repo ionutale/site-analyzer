@@ -1,6 +1,7 @@
 # Site Analyzer – Development Plan
 
 This plan implements a small site analyzer that:
+
 - Accepts a site URL from a page in the app
 - Fetches the site's `sitemap.xml` and saves all URLs to MongoDB
 - Runs a worker that reads queued URLs and uses Playwright to fetch each page's content
@@ -34,6 +35,7 @@ Note: If you keep Mongo auth enabled, add `MONGODB_URI` with creds accordingly.
 ## Data model
 
 ### Collection: `links`
+
 - `_id: ObjectId`
 - `siteId: string` (normalized identifier for the site, e.g., hostname)
 - `url: string`
@@ -46,11 +48,13 @@ Note: If you keep Mongo auth enabled, add `MONGODB_URI` with creds accordingly.
 - Optional: `depth: number | null` (if crawl depth is later needed)
 
 Indexes:
+
 - Unique: `{ siteId: 1, url: 1 }`
 - `{ status: 1 }`
 - `{ siteId: 1, status: 1 }`
 
 ### Collection: `pages`
+
 - `_id: ObjectId`
 - `siteId: string`
 - `url: string`
@@ -66,6 +70,7 @@ Indexes:
 - Optional: `contentHash: string`, `screenshotPath: string | null`
 
 Indexes:
+
 - Unique: `{ siteId: 1, url: 1 }`
 - `{ fetchedAt: -1 }`
 
@@ -80,11 +85,13 @@ Indexes:
 ## Backend components
 
 ### 1) Mongo client utility
+
 - File: `src/lib/server/db.ts`
 - Singleton Mongo client with lazy initialization
 - Exports `getDb()` and typed getters for `links` and `pages`
 
 ### 2) Sitemap ingestion endpoint
+
 - File: `src/routes/api/ingest/+server.ts`
 - Method: `POST`
 - Input: `{ siteUrl: string }`
@@ -96,6 +103,7 @@ Indexes:
 - Response: `{ siteId, inserted: number, pendingTotal: number }`
 
 ### 3) Status and data APIs
+
 - `GET src/routes/api/status/+server.ts`
   - Query: `?siteId=...`
   - Returns counts by status `{ pending, in_progress, done, error, total }`
@@ -140,16 +148,19 @@ Indexes:
   - Upsert in `pages` and set `links.status = 'done'` or `'error'` with `lastError`
 
 Optional enhancements:
+
 - Screenshots to a local folder; store path in `pages`
 - Respect `robots.txt` if needed (out of scope initially)
 
 ## Frontend (SvelteKit)
 
 ### Navigation & layout
+
 - Add a side drawer layout with links to Home, Analyzer, Sites
 - Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
 
 ### Analyzer page
+
 - File: `src/routes/analyzer/+page.svelte`
 - UI:
   - Form to submit site URL -> calls `POST /api/ingest`
@@ -160,17 +171,20 @@ Optional enhancements:
   - Each row links to content view page
 
 ### Content view page
+
 - File: `src/routes/analyzer/page/[id]/+page.svelte`
 - Fetch via `/api/page/[id]`
 - Show: status code, fetchedAt, title, meta, and a sanitized preview (`textExcerpt`); optional toggle for raw HTML in a safe container
   - Show screenshot when available
 
 ### Sites section
+
 - `/sites` — list all sites with counts
 - `/sites/[siteId]` — per-site dashboard with status cards, links table and pages table (filters/sort/pagination)
 - `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
 
 ## Dependencies to add
+
 - `mongodb` (official driver)
 - `fast-xml-parser` (sitemap parsing)
 - `sanitize-html` (safe rendering preview server-side)
@@ -179,6 +193,7 @@ Optional enhancements:
 - Playwright already present; ensure Chromium is installed (`npx playwright install chromium`)
 
 ## Scripts (package.json)
+
 - `"worker": "tsx scripts/worker.ts"` (or use `node` after building to JS)
 - `"dev:worker": "tsx scripts/worker.ts --watch"` (optional during dev)
 
@@ -203,16 +218,19 @@ Optional enhancements:
 ## Milestones & acceptance criteria
 
 ### Phase 1: Foundations (DB + Ingestion + UI skeleton)
+
 - DB util `db.ts` with health check (able to connect)
 - `POST /api/ingest` stores pending links (dedupe via unique index)
 - `/analyzer` page with submit form and live status summary (even if mocked at first)
 
 ### Phase 2: Worker + Content
+
 - Worker claims jobs, fetches pages, writes to `pages`, updates statuses
 - Content view shows title/meta/excerpt safely
 - Links table supports pagination and status filtering
 
 ### Phase 3: Robustness + UX polish
+
 - Lease timeout requeue + backoff retries
 - Error visibility per link; optional screenshots
 - Batch operations on links (retry/purge)
@@ -220,17 +238,20 @@ Optional enhancements:
 - Indexes in place; content size limits enforced
 
 ## Risks & mitigations
+
 - Large/complex sitemaps → stream parsing or chunked ingestion; handle sitemap index
 - Sites requiring auth/JS rendering quirks → log errors; optionally add per-site overrides later
 - Stuck jobs → lease timeout + requeue, attempts cap
 - XSS from stored HTML → sanitize on read; restrict UI to excerpts by default
 
 ## Operational notes
+
 - Dev convenience: run Mongo without auth at `mongodb://localhost:27017` and DB `sv-app`
 - If using auth, mirror credentials in `.env` and update connection strings
 - Dev endpoints available for convenience; protect with `DEV_API_TOKEN` if sharing environments
 
 ## File scaffold (to be created in implementation)
+
 - `src/lib/server/db.ts`
 - `src/lib/server/sitemap.ts` (parse/normalize helpers)
 - `src/routes/api/ingest/+server.ts`
