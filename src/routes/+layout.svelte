@@ -25,6 +25,15 @@
 		applyTheme(pref);
 	}
 
+	function cycleThemePref() {
+		const next: Record<ThemePref, ThemePref> = { system: 'light', light: 'dark', dark: 'system' };
+		setThemePref(next[themePref]);
+	}
+
+	function themeLabel() {
+		return themePref === 'system' ? 'Theme: system' : themePref === 'light' ? 'Theme: light' : 'Theme: dark';
+	}
+
 	onMount(() => {
 		try {
 			const stored = (localStorage.getItem('themePreference') as ThemePref) || 'system';
@@ -50,23 +59,24 @@
 				<div class="flex-1">
 					<a href="/" class="btn btn-ghost text-xl">Site Analyzer</a>
 				</div>
-				<div class="flex-none hidden lg:block">
-					<ul class="menu menu-horizontal px-1">
-						<li><a href="/">Home</a></li>
-						<li><a href="/analyzer">Analyzer</a></li>
-						<li><a href="/sites">Sites</a></li>
-						<li>
-							<details>
-								<summary>Theme</summary>
-								<ul class="p-2 bg-base-200 rounded-box">
-									<li><button class="btn btn-ghost btn-sm" onclick={() => setThemePref('system')}>System</button></li>
-									<li><button class="btn btn-ghost btn-sm" onclick={() => setThemePref('light')}>Light</button></li>
-									<li><button class="btn btn-ghost btn-sm" onclick={() => setThemePref('dark')}>Dark</button></li>
-								</ul>
-							</details>
-						</li>
-					</ul>
-				</div>
+						<div class="flex-none hidden lg:flex items-center gap-2">
+							<ul class="menu menu-horizontal px-1">
+								<li><a href="/">Home</a></li>
+								<li><a href="/analyzer">Analyzer</a></li>
+								<li><a href="/sites">Sites</a></li>
+							</ul>
+							<div class="tooltip" data-tip={themeLabel()}>
+								<button class="btn btn-square btn-ghost" aria-label={themeLabel()} onclick={cycleThemePref}>
+									{#if themePref === 'light'}
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm0 4a1 1 0 0 1 1 1v1h-2v-1a1 1 0 0 1 1-1Zm0-22a1 1 0 0 1 1-1V0h-2v0a1 1 0 0 1 1-1ZM0 13a1 1 0 0 1-1-1H0v2H0a1 1 0 0 1-1-1Zm24 0a1 1 0 0 1-1 1v0h-2v-2h2v0a1 1 0 0 1 1 1ZM4.222 20.364a1 1 0 0 1 0-1.414l.707-.707 1.414 1.414-.707.707a1 1 0 0 1-1.414 0ZM17.657 6.929l.707-.707a1 1 0 0 1 1.414 1.414l-.707.707-1.414-1.414ZM3.515 5.515a1 1 0 0 1 1.414-1.414l.707.707-1.414 1.414-.707-.707Zm14.142 14.142.707.707a1 1 0 1 1-1.414 1.414l-.707-.707 1.414-1.414Z"/></svg>
+									{:else if themePref === 'dark'}
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M21.64 13.64A9 9 0 1 1 10.36 2.36a7 7 0 1 0 11.28 11.28Z"/></svg>
+									{:else}
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M6 2a1 1 0 0 1 1 1v1h10V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v2H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1ZM3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8Z"/></svg>
+									{/if}
+								</button>
+							</div>
+						</div>
 			</div>
 		</div>
 		<main class="container mx-auto px-4 py-6 flex-1">
@@ -85,10 +95,14 @@
 			<li><a href="/">Home</a></li>
 			<li><a href="/analyzer">Analyzer</a></li>
 			<li><a href="/sites">Sites</a></li>
-			<li class="menu-title mt-4">Theme</li>
-			<li><button class="btn btn-ghost" onclick={() => setThemePref('system')}>System</button></li>
-			<li><button class="btn btn-ghost" onclick={() => setThemePref('light')}>Light</button></li>
-			<li><button class="btn btn-ghost" onclick={() => setThemePref('dark')}>Dark</button></li>
+					<li class="menu-title mt-4">Theme</li>
+					<li>
+						<div class="tooltip" data-tip={themeLabel()}>
+							<button class="btn" onclick={cycleThemePref} aria-label={themeLabel()}>
+								{#if themePref === 'light'} Light {:else if themePref === 'dark'} Dark {:else} System {/if}
+							</button>
+						</div>
+					</li>
 		</ul>
 	</div>
 </div>

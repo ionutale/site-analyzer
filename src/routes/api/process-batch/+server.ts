@@ -1,5 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import { chromium } from 'playwright';
 import { links, pages, type LinkDoc, type PageDoc } from '$lib/server/db';
 
@@ -74,8 +75,13 @@ async function processOne(doc: LinkDoc): Promise<void> {
   }
 }
 
-export const POST: RequestHandler = async ({ url }) => {
+export const POST: RequestHandler = async ({ url, request }) => {
   if (process.env.NODE_ENV === 'production') return json({ error: 'Not allowed' }, { status: 403 });
+  const token = env.DEV_API_TOKEN;
+  if (token) {
+    const reqToken = request.headers.get('x-dev-token');
+    if (reqToken !== token) return json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const siteId = url.searchParams.get('siteId') || undefined;
   const count = Math.max(1, Math.min(5, Number(url.searchParams.get('count') || '3')));

@@ -22,6 +22,7 @@
   let sortBy = $state<'updatedAt' | 'url' | 'status' | 'attempts'>('updatedAt');
   let sortDir = $state<'asc' | 'desc'>('desc');
   let onlyErrors = $state(false);
+  let selected = $state<Set<string>>(new Set());
 
   async function ingest() {
     errorMsg = null;
@@ -72,6 +73,9 @@
       const data = await res.json();
       items = data.items;
       total = data.total;
+      // clear selection for items no longer visible
+      const visibleIds = new Set(items.map((i) => i._id));
+      selected = new Set([...selected].filter((id) => visibleIds.has(id)));
     }
   }
 
@@ -104,6 +108,20 @@
     if (!confirm('Delete all data for this site?')) return;
     const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, { method: 'POST' });
     if (res.ok) {
+      await fetchStatus();
+      await fetchLinks();
+    }
+  }
+
+  async function batchAction(action: 'retry' | 'purge') {
+    if (!siteId || selected.size === 0) return;
+    const res = await fetch('/api/links/batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ siteId, ids: Array.from(selected), action })
+    });
+    if (res.ok) {
+      selected.clear();
       await fetchStatus();
       await fetchLinks();
     }
@@ -220,6 +238,9 @@
           <table class="table">
             <thead>
               <tr>
+                <th><input type="checkbox" checked={items.length > 0 && selected.size === items.length} indeterminate={selected.size>0 && selected.size<items.length} onchange={(e) => {
+                  const c = (e.target as HTMLInputElement).checked; selected = new Set(c ? items.map(i=>i._id) : []);
+                }} /></th>
                 <th>URL</th>
                 <th>Status</th>
                 <th>Attempts</th>
@@ -230,6 +251,9 @@
             <tbody>
               {#each items as it}
                 <tr>
+                  <td><input type="checkbox" checked={selected.has(it._id)} onchange={(e)=>{
+                    const c=(e.target as HTMLInputElement).checked; if(c) selected.add(it._id); else selected.delete(it._id); selected = new Set(selected);
+                  }} /></td>
                   <td class="max-w-[420px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
                   <td>
                     <span class="badge {it.status === 'done' ? 'badge-success' : it.status === 'error' ? 'badge-error' : it.status === 'in_progress' ? 'badge-warning' : ''}">{it.status}</span>
@@ -252,7 +276,12 @@
           </table>
         </div>
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <button class="btn btn-outline" disabled={selected.size===0} onclick={() => batchAction('retry')}>Retry selected</button>
+            <button class="btn btn-outline btn-error" disabled={selected.size===0} onclick={() => batchAction('purge')}>Purge selected</button>
+            <span class="text-sm opacity-70">{selected.size} selected</span>
+          </div>
           <button class="btn" onclick={() => { if (page > 1) { page -= 1; fetchLinks(); } }} disabled={page <= 1}>Prev</button>
           <div class="text-sm">Page {page} of {Math.max(1, Math.ceil(total / limit))} • {total} total</div>
           <div class="flex items-center gap-2">

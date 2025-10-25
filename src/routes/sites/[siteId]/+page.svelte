@@ -63,13 +63,28 @@
   {#if stats}
     <div class="card bg-base-200">
       <div class="card-body">
-        <ul class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Pending</div><div class="stat-value text-lg">{stats.pending}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">In progress</div><div class="stat-value text-lg">{stats.in_progress}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Done</div><div class="stat-value text-lg">{stats.done}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Error</div><div class="stat-value text-lg">{stats.error}</div></li>
-          <li class="stat bg-base-100 rounded-box"><div class="stat-title">Total</div><div class="stat-value text-lg">{stats.total}</div></li>
-        </ul>
+        <div class="flex flex-wrap gap-4 items-center">
+          <div>
+            <div class="text-sm opacity-70 mb-1">Status distribution</div>
+            <div class="flex items-end gap-2 h-24">
+              {#each ['pending','in_progress','done','error'] as key}
+                {@const val = (stats as any)[key] as number}
+                <div class="flex flex-col items-center gap-1">
+                  <div class="bg-primary rounded-t w-10" style={`height:${Math.max(2, Math.round((val / Math.max(1, stats.total)) * 96))}px`}></div>
+                  <div class="text-xs">{key}</div>
+                </div>
+              {/each}
+            </div>
+          </div>
+          <div class="divider lg:divider-horizontal"></div>
+          <ul class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <li class="stat bg-base-100 rounded-box"><div class="stat-title">Pending</div><div class="stat-value text-lg">{stats.pending}</div></li>
+            <li class="stat bg-base-100 rounded-box"><div class="stat-title">In progress</div><div class="stat-value text-lg">{stats.in_progress}</div></li>
+            <li class="stat bg-base-100 rounded-box"><div class="stat-title">Done</div><div class="stat-value text-lg">{stats.done}</div></li>
+            <li class="stat bg-base-100 rounded-box"><div class="stat-title">Error</div><div class="stat-value text-lg">{stats.error}</div></li>
+            <li class="stat bg-base-100 rounded-box"><div class="stat-title">Total</div><div class="stat-value text-lg">{stats.total}</div></li>
+          </ul>
+        </div>
       </div>
     </div>
   {/if}
