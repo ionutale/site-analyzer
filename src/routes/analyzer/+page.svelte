@@ -19,6 +19,9 @@
   let statusFilter = $state<string>('');
   let q = $state('');
   let healthOk = $state<boolean | null>(null);
+  let sortBy = $state<'updatedAt' | 'url' | 'status' | 'attempts'>('updatedAt');
+  let sortDir = $state<'asc' | 'desc'>('desc');
+  let onlyErrors = $state(false);
 
   async function ingest() {
     errorMsg = null;
@@ -61,7 +64,7 @@
 
   async function fetchLinks() {
     if (!siteId) return;
-    const params = new URLSearchParams({ siteId, page: String(page), limit: String(limit) });
+    const params = new URLSearchParams({ siteId, page: String(page), limit: String(limit), sortBy, sortDir });
     if (statusFilter) params.set('status', statusFilter);
     if (q.trim()) params.set('q', q.trim());
     const res = await fetch(`/api/links?${params.toString()}`);
@@ -90,6 +93,16 @@
   async function processBatch() {
     if (!siteId) return;
     const res = await fetch(`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=3`, { method: 'POST' });
+    if (res.ok) {
+      await fetchStatus();
+      await fetchLinks();
+    }
+  }
+
+  async function resetSite() {
+    if (!siteId) return;
+    if (!confirm('Delete all data for this site?')) return;
+    const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, { method: 'POST' });
     if (res.ok) {
       await fetchStatus();
       await fetchLinks();
@@ -169,6 +182,22 @@
             <label class="label" for="searchUrl"><span class="label-text">Search URL</span></label>
             <input id="searchUrl" class="input input-bordered" placeholder="contains…" bind:value={q} onkeydown={(e) => e.key === 'Enter' && (page = 1, fetchLinks())} />
           </div>
+          <div class="form-control w-40">
+            <label class="label" for="sortBy"><span class="label-text">Sort</span></label>
+            <select id="sortBy" class="select select-bordered" bind:value={sortBy} onchange={() => { page = 1; fetchLinks(); }}>
+              <option value="updatedAt">Updated</option>
+              <option value="url">URL</option>
+              <option value="status">Status</option>
+              <option value="attempts">Attempts</option>
+            </select>
+          </div>
+          <div class="form-control w-32">
+            <label class="label" for="sortDir"><span class="label-text">Direction</span></label>
+            <select id="sortDir" class="select select-bordered" bind:value={sortDir} onchange={() => { page = 1; fetchLinks(); }}>
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+          </div>
           <div class="form-control w-28">
             <label class="label" for="pageSize"><span class="label-text">Page size</span></label>
             <select id="pageSize" class="select select-bordered" bind:value={limit} onchange={() => { page = 1; fetchLinks(); }}>
@@ -182,6 +211,9 @@
           {#if dev}
             <button class="btn btn-secondary" type="button" onclick={processBatch}>Process batch</button>
           {/if}
+          <button class="btn" type="button" onclick={() => { onlyErrors = !onlyErrors; statusFilter = onlyErrors ? 'error' : ''; page = 1; fetchLinks(); }}>
+            {onlyErrors ? 'Showing: errors' : 'Only errors'}
+          </button>
         </div>
 
         <div class="overflow-x-auto">
@@ -223,7 +255,10 @@
         <div class="flex items-center justify-between">
           <button class="btn" onclick={() => { if (page > 1) { page -= 1; fetchLinks(); } }} disabled={page <= 1}>Prev</button>
           <div class="text-sm">Page {page} of {Math.max(1, Math.ceil(total / limit))} • {total} total</div>
-          <button class="btn" onclick={() => { const max = Math.max(1, Math.ceil(total / limit)); if (page < max) { page += 1; fetchLinks(); } }} disabled={page >= Math.max(1, Math.ceil(total / limit))}>Next</button>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-error" onclick={resetSite} title="Dev only">Reset site</button>
+            <button class="btn" onclick={() => { const max = Math.max(1, Math.ceil(total / limit)); if (page < max) { page += 1; fetchLinks(); } }} disabled={page >= Math.max(1, Math.ceil(total / limit))}>Next</button>
+          </div>
         </div>
       </div>
     </div>

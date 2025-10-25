@@ -20,6 +20,11 @@ export const GET: RequestHandler = async ({ url }) => {
   const page = Math.max(1, Number(url.searchParams.get('page') || '1'));
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') || '20')));
   const q = url.searchParams.get('q')?.trim();
+  const sortByRaw = url.searchParams.get('sortBy') || 'updatedAt';
+  const sortDirRaw = (url.searchParams.get('sortDir') || 'desc').toLowerCase();
+  const allowedSort: Record<string, 1 | -1> = { url: 1, status: 1, attempts: 1, updatedAt: -1 };
+  const sortField = Object.prototype.hasOwnProperty.call(allowedSort, sortByRaw) ? sortByRaw : 'updatedAt';
+  const sortDir: 1 | -1 = sortDirRaw === 'asc' ? 1 : -1;
 
   const filter: Record<string, unknown> = { siteId };
   if (status) filter.status = status;
@@ -31,7 +36,7 @@ export const GET: RequestHandler = async ({ url }) => {
   // Use aggregation to join with pages collection to include pageId when available
   const pipeline = [
     { $match: filter },
-    { $sort: { updatedAt: -1 } },
+    { $sort: { [sortField]: sortDir } },
     { $skip: (page - 1) * limit },
     { $limit: limit },
     {
