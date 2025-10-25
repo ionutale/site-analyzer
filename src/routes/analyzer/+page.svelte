@@ -7,6 +7,7 @@
 	let siteId = $state<string | null>(null);
 	let loading = $state(false);
 	let errorMsg = $state<string | null>(null);
+	let sites = $state<Array<{ siteId: string }>>([]);
 
 	let stats = $state<{
 		pending: number;
@@ -52,6 +53,9 @@
 			const data = await res.json();
 			if (!res.ok) throw new Error(data?.error || 'Failed to ingest sitemap');
 			siteId = data.siteId;
+			try {
+				if (siteId) localStorage.setItem('lastSiteId', siteId);
+			} catch {}
 			// reset filters
 			page = 1;
 			// start polling
@@ -171,6 +175,30 @@
 	}
 
 	onMount(() => () => timer && clearInterval(timer));
+
+	async function loadSites() {
+		try {
+			const res = await fetch('/api/sites');
+			if (res.ok) {
+				const data = (await res.json()) as Array<{ siteId: string }>;
+				sites = data;
+			}
+		} catch {}
+	}
+
+	onMount(() => {
+		loadSites();
+		try {
+			const qp = new URLSearchParams(location.search);
+			const qSite = qp.get('siteId');
+			const stored = localStorage.getItem('lastSiteId');
+			if (!siteId && (qSite || stored)) {
+				siteId = qSite || stored;
+				startPolling();
+			}
+		} catch {}
+		return () => timer && clearInterval(timer);
+	});
 </script>
 
 <section class="space-y-6">
@@ -202,6 +230,29 @@
 			>
 		{/if}
 	</form>
+
+	<div class="flex items-center gap-2">
+		<div class="form-control w-full sm:w-64">
+			<label class="label" for="siteSel"><span class="label-text">Select site</span></label>
+			<select
+				id="siteSel"
+				class="select-bordered select"
+				bind:value={siteId}
+				onchange={() => {
+					try {
+						if (siteId) localStorage.setItem('lastSiteId', siteId);
+					} catch {}
+					page = 1;
+					startPolling();
+				}}
+			>
+				<option value={null}>—</option>
+				{#each sites as s (s.siteId)}
+					<option value={s.siteId}>{s.siteId}</option>
+				{/each}
+			</select>
+		</div>
+	</div>
 
 	{#if errorMsg}
 		<div class="alert alert-error">
