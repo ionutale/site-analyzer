@@ -131,6 +131,12 @@ Indexes:
   - `POST src/routes/api/reset-site/+server.ts` — deletes links/pages for a site
   - `POST src/routes/api/links/batch/+server.ts` — batch retry/purge selected link ids
 
+- Resume endpoint:
+  - `POST src/routes/api/resume/+server.ts` — resume processing for a site
+    - Query: `?siteId=...&mode=all|retry-errors`
+    - Requeues stale `in_progress` links and retries `error` links under the attempts cap
+    - Response: `{ requeuedStale: number, retriedErrors: number }`
+
 - Sites & pages APIs:
   - `GET src/routes/api/sites/+server.ts` — list all sites with counts and lastUpdated
   - `GET src/routes/api/pages/+server.ts` — list pages per site with pagination/search/sort
@@ -173,10 +179,14 @@ Optional enhancements:
 - File: `src/routes/analyzer/+page.svelte`
 - UI:
   - Form to submit site URL -> calls `POST /api/ingest`
+  - Site selector dropdown to choose an existing site (fetched from `/api/sites`)
+    - Persists last selection in localStorage and restores on load
+    - Supports deep-link via `?siteId=...` query param
   - Status summary (counts by status) -> calls `/api/status?siteId=...`, auto-refresh every 5–10s
   - Table of links with filters: status, search, pagination -> `/api/links?...`
   - Column sorting and quick "only errors" toggle
   - Multi-select with batch actions: retry, purge errors
+  - Resume actions: "Resume all" and "Retry errors" buttons call `POST /api/resume`
   - Each row links to content view page
 
 ### Content view page
@@ -190,6 +200,7 @@ Optional enhancements:
 
 - `/sites` — list all sites with counts
 - `/sites/[siteId]` — per-site dashboard with status cards, links table and pages table (filters/sort/pagination)
+  - Header actions include Resume buttons (all / retry-errors) and optional Reset (dev-only)
 - `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
   - Shows missing canonical, short/long titles, duplicates (titles/meta), slow pages, missing title/meta, non-200
 
@@ -256,12 +267,21 @@ Optional enhancements:
 - Batch operations on Analyzer polished; internal navigation uses `resolve()` for base-path safety
 - Lint/type fixes aligned with Svelte 5 (e.g., SvelteURLSearchParams, SvelteSet)
 
+### Phase 5: Operations & UX refinements (completed)
+
+- Resume capability surfaced end-to-end
+  - Server: `POST /api/resume` requeues stale leases and retries errors (under cap)
+  - UI: Analyzer + per-site pages show "Resume all" and "Retry errors" buttons with success alerts
+- Analyzer improvements
+  - Site selector loads from `/api/sites`, persists last selection, supports `?siteId` deep-link
+  - External links open with direct hrefs; internal links continue to use `resolve()`
+- DX: ambient TS declarations added for Svelte 5 helpers used in templates
+
 ### Next steps (planned)
 
-- “Resume” action: a non-dev endpoint to trigger/resume pending processing for a site, surfaced in UI
-- Homepage dashboard: recent sites, quick stats, and shortcuts
-- Toasts/notifications for batch actions/reset/ingest
-- Server-side rate limiting (in-memory bucket) for dev endpoints
+- Homepage dashboard: recent sites, quick stats (pages analyzed, errors, avg load time), and shortcuts
+- Toasts/notifications framework (replace inline alerts for ingest/batch/reset/resume)
+- Server-side rate limiting (in-memory token bucket) for dev endpoints
 - Duplicate content detection using `contentHash`/`textContent` clustering
 
 ## Risks & mitigations
