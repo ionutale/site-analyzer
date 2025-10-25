@@ -137,9 +137,10 @@
 							<tbody>
 								{#each data.samples.slowPages as it (it._id)}
 									<tr>
-										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[420px] truncate"
-											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+												>{it.url}</a
+											></td
 										>
 										<td>{it.loadTimeMs}</td>
 									</tr>
@@ -158,8 +159,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingTitlePages as it (it._id)}
 							<li class="truncate">
-								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
-								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingTitlePages.length === 0}
@@ -174,8 +174,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingMetaPages as it (it._id)}
 							<li class="truncate">
-								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
-								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingMetaPages.length === 0}
@@ -193,9 +192,10 @@
 							<tbody>
 								{#each data.samples.non200Pages as it (it._id)}
 									<tr>
-										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[420px] truncate"
-											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+												>{it.url}</a
+											></td
 										>
 										<td>{it.statusCode ?? 'n/a'}</td>
 									</tr>
@@ -214,8 +214,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingCanonicalPages as it (it._id)}
 							<li class="truncate">
-								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
-								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingCanonicalPages.length === 0}
@@ -235,9 +234,10 @@
 									<tr>
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
-										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[320px] truncate"
-											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+												>{it.url}</a
+											></td
 										>
 									</tr>
 								{/each}
@@ -260,9 +260,10 @@
 									<tr>
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
-										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[320px] truncate"
-											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
+											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+												>{it.url}</a
+											></td
 										>
 									</tr>
 								{/each}
@@ -289,8 +290,7 @@
 											<ul class="ml-5 list-disc">
 												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
-														<!-- svelte-ignore svelte/no-navigation-without-resolve -->
-														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
+														<a class="link" href={resolve(u)} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}
 											</ul>
@@ -320,8 +320,7 @@
 											<ul class="ml-5 list-disc">
 												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
-														<!-- svelte-ignore svelte/no-navigation-without-resolve -->
-														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
+														<a class="link" href={resolve(u)} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}
 											</ul>

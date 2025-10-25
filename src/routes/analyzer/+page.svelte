@@ -365,7 +365,9 @@
 										/></td
 									>
 									<td class="max-w-[420px] truncate">
-										<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+										<a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
+											>{it.url}</a
+										>
 									</td>
 									<td>
 										<span

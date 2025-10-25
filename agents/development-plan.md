@@ -8,6 +8,7 @@ This plan implements a small site analyzer that:
 - Displays a simple dashboard to monitor link statuses and view stored content
 - Provides a Sites section to browse domains and per-site dashboards
 - Includes SEO analysis to surface common issues (missing title/meta, slow pages, non-200s)
+  and extended checks (missing canonical, title length bounds, duplicate titles/meta)
 
 MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-app`. You can change these in `docker-compose.yml` or `.env`.
 
@@ -62,12 +63,16 @@ Indexes:
 - `fetchedAt: Date`
 - `contentType: string | null`
 - `title: string | null`
+- `titleLength: number | null`
 - `meta: Record<string, string> | null` (e.g., description)
 - `metaDescription: string | null`
 - `loadTimeMs: number | null`
+- `canonicalUrl: string | null`
 - `content: string` (HTML/text; cap size)
+- `textContent: string | null` (extracted plain text)
 - `textExcerpt: string` (sanitized preview for UI)
 - Optional: `contentHash: string`, `screenshotPath: string | null`
+- Optional metrics: `contentLength: number | null`, `wordCount: number | null`
 
 Indexes:
 
@@ -130,6 +135,7 @@ Indexes:
   - `GET src/routes/api/sites/+server.ts` — list all sites with counts and lastUpdated
   - `GET src/routes/api/pages/+server.ts` — list pages per site with pagination/search/sort
   - `GET src/routes/api/seo/+server.ts` — SEO aggregates for a site (missing title/meta, slow pages by threshold, non-200)
+    - Also reports missing canonical, title length issues (min/max bounds), and duplicates for titles/meta
 
 ## Worker process
 
@@ -143,6 +149,8 @@ Indexes:
   - For each URL: `page.goto(url, { waitUntil: 'networkidle', timeout: ... })`
   - Extract: status code, title, meta description, content type, content HTML, build `textExcerpt`
   - Measure `loadTimeMs` as wall-clock duration of navigation+render
+  - Extract canonical URL and plain text (`textContent`) for metrics
+  - Compute `titleLength`, `contentLength`, `wordCount` for SEO analysis
   - Optional: capture screenshot when enabled
   - Cap content length (e.g., 2–4 MB), compute hash optionally
   - Upsert in `pages` and set `links.status = 'done'` or `'error'` with `lastError`
@@ -158,6 +166,7 @@ Optional enhancements:
 
 - Add a side drawer layout with links to Home, Analyzer, Sites
 - Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
+  - Apply theme early (pre-paint) and use DaisyUI themes (light/dark variants)
 
 ### Analyzer page
 
@@ -182,6 +191,7 @@ Optional enhancements:
 - `/sites` — list all sites with counts
 - `/sites/[siteId]` — per-site dashboard with status cards, links table and pages table (filters/sort/pagination)
 - `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
+  - Shows missing canonical, short/long titles, duplicates (titles/meta), slow pages, missing title/meta, non-200
 
 ## Dependencies to add
 
@@ -235,7 +245,24 @@ Optional enhancements:
 - Error visibility per link; optional screenshots
 - Batch operations on links (retry/purge)
 - SEO dashboard with missing title/meta, slow pages, and non-200 counts
+  - Extended SEO checks: missing canonical, title length bounds, duplicate titles/meta
 - Indexes in place; content size limits enforced
+
+### Phase 4: SEO & DX enhancements (completed)
+
+- Worker stores canonical URL, text-only content, and SEO metrics (titleLength, contentLength, wordCount)
+- SEO API returns additional aggregates (canonical, title length issues, duplicate titles/meta)
+- SEO UI renders the new metrics and sample tables
+- Batch operations on Analyzer polished; internal navigation uses `resolve()` for base-path safety
+- Lint/type fixes aligned with Svelte 5 (e.g., SvelteURLSearchParams, SvelteSet)
+
+### Next steps (planned)
+
+- “Resume” action: a non-dev endpoint to trigger/resume pending processing for a site, surfaced in UI
+- Homepage dashboard: recent sites, quick stats, and shortcuts
+- Toasts/notifications for batch actions/reset/ingest
+- Server-side rate limiting (in-memory bucket) for dev endpoints
+- Duplicate content detection using `contentHash`/`textContent` clustering
 
 ## Risks & mitigations
 
