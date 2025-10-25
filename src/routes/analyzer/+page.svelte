@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
+	import { toasts } from '$lib/stores/toast';
 
 	let siteUrl = $state('');
 	let siteId = $state<string | null>(null);
@@ -39,7 +40,7 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new SvelteSet());
-	let resumeMsg = $state<string | null>(null);
+	// use toasts for resume feedback
 
 	async function ingest() {
 		errorMsg = null;
@@ -165,10 +166,11 @@
 		);
 		if (res.ok) {
 			const data = await res.json();
-			resumeMsg = `Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
-				data.retriedErrors ?? 0
-			}`;
-			setTimeout(() => (resumeMsg = null), 4000);
+			toasts.success(
+				`Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
+					data.retriedErrors ?? 0
+				}`
+			);
 			await fetchStatus();
 			await fetchLinks();
 		}
@@ -260,11 +262,6 @@
 		</div>
 	{/if}
 
-	{#if resumeMsg}
-		<div class="alert alert-success">
-			<span>{resumeMsg}</span>
-		</div>
-	{/if}
 
 	{#if siteId}
 		<div class="card bg-base-200">

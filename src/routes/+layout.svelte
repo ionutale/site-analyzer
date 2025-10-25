@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 
+	import { toasts } from '$lib/stores/toast';
+
 	let { children } = $props();
 
 	type ThemePref = 'system' | 'light' | 'dark';
@@ -160,4 +162,22 @@
 			</li>
 		</ul>
 	</div>
+</div>
+
+<!-- Toasts container -->
+<div class="toast toast-top toast-end z-50">
+	{#each $toasts as t (t.id)}
+		<div
+			class="alert {t.kind === 'success'
+				? 'alert-success'
+				: t.kind === 'error'
+					? 'alert-error'
+					: 'alert-info'} shadow"
+		>
+			<span>{t.message}</span>
+			<button class="btn btn-ghost btn-xs" aria-label="Dismiss" onclick={() => toasts.dismiss(t.id)}
+				>✕</button
+			>
+		</div>
+	{/each}
 </div>

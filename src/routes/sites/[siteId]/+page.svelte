@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
+	import { toasts } from '$lib/stores/toast';
 	let { params } = $props();
 	const siteId = params.siteId as string;
 
@@ -31,7 +32,6 @@
 	let pages = $state<PageItem[]>([]);
 	let linksTotal = $state(0);
 	let pagesTotal = $state(0);
-	let resumeMsg = $state<string | null>(null);
 
 	// filters
 	let lq = $state('');
@@ -108,10 +108,11 @@
 		);
 		if (res.ok) {
 			const data = await res.json();
-			resumeMsg = `Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
-				data.retriedErrors ?? 0
-			}`;
-			setTimeout(() => (resumeMsg = null), 4000);
+			toasts.success(
+				`Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
+					data.retriedErrors ?? 0
+				}`
+			);
 			await fetchStatus();
 			await fetchLinks();
 			await fetchPages();
@@ -134,11 +135,6 @@
 		</div>
 	</div>
 
-	{#if resumeMsg}
-		<div class="alert alert-success">
-			<span>{resumeMsg}</span>
-		</div>
-	{/if}
 
 	{#if stats}
 		<div class="card bg-base-200">
