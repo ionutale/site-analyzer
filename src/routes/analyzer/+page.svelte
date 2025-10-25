@@ -262,7 +262,6 @@
 		</div>
 	{/if}
 
-
 	{#if siteId}
 		<div class="card bg-base-200">
 			<div class="card-body">
@@ -443,9 +442,7 @@
 										/></td
 									>
 									<td class="max-w-[420px] truncate">
-										<a class="link" href={it.url} target="_blank" rel="noopener"
-											>{it.url}</a
-										>
+										<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 									</td>
 									<td>
 										<span

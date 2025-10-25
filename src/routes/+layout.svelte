@@ -165,7 +165,7 @@
 </div>
 
 <!-- Toasts container -->
-<div class="toast toast-top toast-end z-50">
+<div class="toast toast-end toast-top z-50">
 	{#each $toasts as t (t.id)}
 		<div
 			class="alert {t.kind === 'success'

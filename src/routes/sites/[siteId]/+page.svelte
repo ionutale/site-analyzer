@@ -135,7 +135,6 @@
 		</div>
 	</div>
 
-
 	{#if stats}
 		<div class="card bg-base-200">
 			<div class="card-body">

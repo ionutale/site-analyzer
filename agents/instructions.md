@@ -13,8 +13,6 @@ add a page details view where i can see the saved information for each page.
 add a page with the SEO analysis results, showing common SEO issues found across the pages (e.g., missing title, missing meta description, slow loading pages, etc.)
 add filters to the main dashboard to filter links by status, and search by URL.
 
-
 the home page should show a dashboard with cards with all sites added, number of pages analyzed, number of pages with errors, average load time, etc.
 
 add a side drawer in the frontend page where i can see navigate all the tools available for site analysis and SEO.
-
