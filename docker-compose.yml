@@ -8,13 +8,15 @@ services:
     ports:
       - "27017:27017"
     environment:
-      # Dev: run without auth, default DB for convenience
+      # Enable auth and set default DB
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
       MONGO_INITDB_DATABASE: sv-app
     volumes:
-      - mongo-data:/data/db
-      - mongo-config:/data/configdb
-      # To auto-seed, put .js or .sh files in ./docker/mongo-init and uncomment the next line
-      # - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
+      - mongo-data-dev:/data/db
+      - mongo-config-dev:/data/configdb
+      # Auto-init scripts (create non-root application user, seed data, etc.)
+      - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -35,5 +37,5 @@ services:
   #     - mongodb
 
 volumes:
-  mongo-data:
-  mongo-config:
+  mongo-data-dev:
+  mongo-config-dev:

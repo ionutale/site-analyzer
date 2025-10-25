@@ -57,7 +57,19 @@ docker compose down
 docker compose down -v
 ```
 
-### Connection
+### Troubleshooting
+
+- Error: `Command update requires authentication`
+	- Cause: Existing MongoDB volumes were created earlier with authentication enabled and persisted.
+	- Fix options:
+		- Easiest: reset volumes and start fresh
+			```sh
+			docker compose down -v
+			docker compose up -d
+			```
+		- Non-destructive: we switched to new dev volumes (`mongo-data-dev`, `mongo-config-dev`) so `docker compose up -d` will start a fresh no-auth instance without touching older volumes.
+
+### Connection (no-auth default)
 
 - Default creds (dev only): username `root`, password `example`
 - Local connection string (admin DB):
@@ -73,6 +85,34 @@ mongodb://root:example@localhost:27017/app?authSource=admin
 ```
 
 ### Data and optional tools
+### Auth mode (optional)
+
+This repo includes an init script to create a non-root dev user `local-user` with password `1234567890` on DB `sv-app`.
+
+To enable auth:
+
+1) Ensure the compose file has these env vars (already configured):
+
+```
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=admin
+MONGO_INITDB_DATABASE=sv-app
+```
+
+2) Start fresh so the init scripts run (first-run only):
+
+```sh
+docker compose down -v
+docker compose up -d
+```
+
+3) Use this connection string:
+
+```
+mongodb://local-user:1234567890@localhost:27017/sv-app?authSource=sv-app
+```
+
+If you prefer a different password or database, edit `docker/mongo-init/01-create-local-user.js` and restart with `down -v`.
 
 - Data persists in named volumes: `mongo-data` and `mongo-config`.
 - To auto-seed on first run, place `.js` or `.sh` files in `./docker/mongo-init` and
