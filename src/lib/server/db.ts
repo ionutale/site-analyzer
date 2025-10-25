@@ -51,13 +51,18 @@ export interface PageDoc extends Document {
   fetchedAt: Date;
   contentType?: string | null;
   title?: string | null;
+  titleLength?: number | null;
   meta?: Record<string, string> | null;
   metaDescription?: string | null;
   loadTimeMs?: number | null;
+  canonicalUrl?: string | null;
   content: string; // HTML or text
+  textContent?: string | null; // extracted text only
   textExcerpt?: string;
   contentHash?: string;
   screenshotPath?: string | null;
+  contentLength?: number | null; // characters in content
+  wordCount?: number | null;
 }
 
 export async function links(): Promise<Collection<LinkDoc>> {

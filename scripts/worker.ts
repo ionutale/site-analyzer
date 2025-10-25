@@ -47,9 +47,16 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
     const metaDescription = await pg
       .$eval('meta[name="description"], meta[property="og:description"]', (el: Element) => (el as HTMLMetaElement).content || '', { strict: false })
       .catch(() => '');
+    const canonicalUrl = await pg
+      .$eval('link[rel="canonical"]', (el: Element) => (el as HTMLLinkElement).getAttribute('href') || '', { strict: false })
+      .catch(() => '');
+    const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
 
     const excerpt = html.slice(0, 2000);
     const hash = crypto.createHash('sha256').update(html).digest('hex');
+    const contentLength = html.length;
+    const wordCount = (textContent || '').split(/\s+/).filter(Boolean).length;
+    const titleLength = (title || '').length;
 
     let screenshotPath: string | null = null;
     if (SCREENSHOTS) {
@@ -76,10 +83,15 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
           fetchedAt: now,
           contentType,
           title,
+          titleLength,
           metaDescription: metaDescription || null,
           loadTimeMs,
+          canonicalUrl: canonicalUrl || null,
           content: html,
+          contentLength,
           textExcerpt: excerpt,
+          textContent: textContent || null,
+          wordCount,
           contentHash: hash,
           screenshotPath
         } satisfies Partial<PageDoc>

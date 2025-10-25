@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ request }) => {
         $setOnInsert: {
           siteId,
           url,
-          status: 'pending',
+          status: 'pending' as const,
           attempts: 0,
           createdAt: now
         },
