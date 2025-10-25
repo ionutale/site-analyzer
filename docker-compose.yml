@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: site-analyzer-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      # Dev-only credentials. Change in production.
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      # MONGO_INITDB_DATABASE: app
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+      # To auto-seed, put .js or .sh files in ./docker/mongo-init and uncomment the next line
+      # - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional web UI for MongoDB. Uncomment to enable.
+  # mongo-express:
+  #   image: mongo-express:1.0.2-20
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: example
+  #     ME_CONFIG_MONGODB_SERVER: mongodb
+  #   depends_on:
+  #     - mongodb
+
+volumes:
+  mongo-data:
+  mongo-config:
