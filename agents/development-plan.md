@@ -237,7 +237,7 @@ Optional enhancements:
   - Content view displays sanitized preview, metadata, and screenshot when enabled
   - Sites list and site detail navigation works; SEO dashboard shows expected counts
 
-## Homepage dashboard (planned)
+## Homepage dashboard (completed)
 
 Goal: a landing page that summarizes recent activity and key health metrics across all sites, with quick links into Analyzer/Sites/SEO.
 
@@ -261,7 +261,7 @@ Acceptance criteria
 - Links navigate correctly using `resolve()` for internal routes
 - No blocking on large data; degrades gracefully if some APIs fail (shows partial with alerts)
 
-## Toasts/notifications (planned)
+## Toasts/notifications (completed)
 
 Design
 
@@ -320,6 +320,9 @@ Acceptance criteria
 ## Changelog
 
 - 2025-10-26
+  - **Completed**: Homepage dashboard with site statistics and recent sites list
+  - **Completed**: Toast notification system with success/error/info helpers
+  - **Completed**: Replaced all inline alerts with toasts for ingest, batch actions, reset, and resume
   - Added Resume endpoint to backend and wired Resume actions in Analyzer and per-site pages
   - Analyzer gained site selector, local persistence, and query param restore
   - Development plan expanded with dashboard/toasts/rate limiting/duplicate content details
@@ -359,16 +362,29 @@ Acceptance criteria
 
 - Resume capability surfaced end-to-end
   - Server: `POST /api/resume` requeues stale leases and retries errors (under cap)
-  - UI: Analyzer + per-site pages show "Resume all" and "Retry errors" buttons with success alerts
+  - UI: Analyzer + per-site pages show "Resume all" and "Retry errors" buttons with success toasts
 - Analyzer improvements
   - Site selector loads from `/api/sites`, persists last selection, supports `?siteId` deep-link
   - External links open with direct hrefs; internal links continue to use `resolve()`
 - DX: ambient TS declarations added for Svelte 5 helpers used in templates
 
+### Phase 6: Homepage & Notifications (completed)
+
+- **Homepage dashboard**
+  - Landing page at `/` with summary cards: total sites, pages analyzed, pages with errors
+  - Recent sites list (top 10 by last updated) with quick-action buttons
+  - Links to Analyzer (with pre-selected site), Site dashboard, and SEO analysis
+  - Graceful error handling with toast notifications
+- **Toast notification system**
+  - DaisyUI toast components with Svelte store (`lib/stores/toast.ts`)
+  - Helpers: `success()`, `error()`, `info()` with auto-expiring toasts
+  - Rendered in `+layout.svelte` for app-wide availability
+  - Replaced all inline error alerts with toasts in Analyzer, Sites, and SEO pages
+  - Success notifications for: ingest, batch actions, reset, and resume operations
+  - Clean TypeScript types and lint-compliant code
+
 ### Next steps (planned)
 
-- Homepage dashboard: recent sites, quick stats (pages analyzed, errors, avg load time), and shortcuts
-- Toasts/notifications framework (replace inline alerts for ingest/batch/reset/resume)
 - Server-side rate limiting (in-memory token bucket) for dev endpoints
 - Duplicate content detection using `contentHash`/`textContent` clustering
 
