@@ -15,6 +15,10 @@
 	let loading = $state(true);
 	let errorMsg = $state<string | null>(null);
 
+	function analyzerLink(siteId: string) {
+		return `${resolve('/analyzer')}?siteId=${encodeURIComponent(siteId)}`;
+	}
+
 	let totals = $state({
 		sites: 0,
 		analyzed: 0,
@@ -109,14 +113,13 @@
 									<td>{s.total}</td>
 									<td>{new Date(s.lastUpdated).toLocaleString()}</td>
 									<td>
+										<!-- eslint-disable svelte/no-navigation-without-resolve -->
 										<div class="btn-group">
-											<a
-												class="btn btn-sm"
-												href={`/analyzer?siteId=${encodeURIComponent(s.siteId)}`}>Analyzer</a
-											>
+											<a class="btn btn-sm" href={analyzerLink(s.siteId)}>Analyzer</a>
 											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}`)}>Site</a>
 											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}/seo`)}>SEO</a>
 										</div>
+										<!-- eslint-enable svelte/no-navigation-without-resolve -->
 									</td>
 								</tr>
 							{/each}

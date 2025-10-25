@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { toasts } from '$lib/stores/toast';
 	let sites = $state<
 		Array<{
 			siteId: string;
@@ -12,17 +13,16 @@
 		}>
 	>([]);
 	let loading = $state(true);
-	let errorMsg = $state<string | null>(null);
 
 	async function loadSites() {
 		loading = true;
-		errorMsg = null;
 		try {
 			const res = await fetch('/api/sites');
 			if (!res.ok) throw new Error('Failed to load sites');
 			sites = await res.json();
 		} catch (e: unknown) {
-			errorMsg = e instanceof Error ? e.message : 'Unknown error';
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Failed to load sites: ${msg}`);
 		} finally {
 			loading = false;
 		}
@@ -32,10 +32,6 @@
 
 <section class="space-y-4">
 	<h1 class="text-3xl font-bold">Sites</h1>
-
-	{#if errorMsg}
-		<div class="alert alert-error"><span>{errorMsg}</span></div>
-	{/if}
 
 	{#if loading}
 		<div class="h-8 w-64 skeleton"></div>
