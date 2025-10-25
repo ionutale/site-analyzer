@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
+	import { resolve } from '$app/paths';
 	let { params } = $props();
 	const siteId = params.siteId as string;
 
@@ -10,8 +11,24 @@
 		error: number;
 		total: number;
 	} | null>(null);
-	let links = $state<any[]>([]);
-	let pages = $state<any[]>([]);
+	type LinkItem = {
+		_id: string;
+		url: string;
+		status: string;
+		attempts: number;
+		updatedAt: string;
+		pageId?: string | null;
+	};
+	type PageItem = {
+		_id: string;
+		url: string;
+		title?: string | null;
+		statusCode?: number | null;
+		fetchedAt: string;
+		contentType?: string | null;
+	};
+	let links = $state<LinkItem[]>([]);
+	let pages = $state<PageItem[]>([]);
 	let linksTotal = $state(0);
 	let pagesTotal = $state(0);
 
@@ -34,7 +51,7 @@
 		if (res.ok) stats = await res.json();
 	}
 	async function fetchLinks() {
-		const qp = new URLSearchParams({
+		const qp = new SvelteURLSearchParams({
 			siteId,
 			page: String(lpage),
 			limit: String(llimit),
@@ -51,7 +68,7 @@
 		}
 	}
 	async function fetchPages() {
-		const qp = new URLSearchParams({
+		const qp = new SvelteURLSearchParams({
 			siteId,
 			page: String(ppage),
 			limit: String(plimit),
@@ -88,7 +105,7 @@
 	<div class="flex items-center justify-between">
 		<h1 class="text-3xl font-bold">Site: <code>{siteId}</code></h1>
 		<div class="flex items-center gap-2">
-			<a class="btn" href={`/sites/${siteId}/seo`}>SEO</a>
+			<a class="btn" href={resolve(`/sites/${siteId}/seo`)}>SEO</a>
 			{#if dev}
 				<button class="btn btn-error" onclick={resetSite}>Reset site</button>
 			{/if}
@@ -102,8 +119,8 @@
 					<div>
 						<div class="mb-1 text-sm opacity-70">Status distribution</div>
 						<div class="flex h-24 items-end gap-2">
-							{#each ['pending', 'in_progress', 'done', 'error'] as key}
-								{@const val = (stats as any)[key] as number}
+							{#each ['pending', 'in_progress', 'done', 'error'] as key (key)}
+								{@const val = (stats?.[key as keyof typeof stats] as number) ?? 0}
 								<div class="flex flex-col items-center gap-1">
 									<div
 										class="w-10 rounded-t bg-primary"
@@ -236,11 +253,11 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each links as it}
+						{#each links as it (it._id)}
 							<tr>
-								<td class="max-w-[420px] truncate"
-									><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
-								>
+								<td class="max-w-[420px] truncate">
+									<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+								</td>
 								<td
 									><span
 										class="badge {it.status === 'done'
@@ -255,7 +272,9 @@
 								<td>{it.attempts}</td>
 								<td>{new Date(it.updatedAt).toLocaleString()}</td>
 								<td
-									>{#if it.pageId}<a class="btn btn-sm" href={`/analyzer/page/${it.pageId}`}>View</a
+									>{#if it.pageId}<a
+											class="btn btn-sm"
+											href={resolve(`/analyzer/page/${it.pageId}`)}>View</a
 										>{:else}<span class="text-sm opacity-50">n/a</span>{/if}</td
 								>
 							</tr>
@@ -373,16 +392,16 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each pages as pg}
+						{#each pages as pg (pg._id)}
 							<tr>
 								<td class="max-w-[320px] truncate">{pg.title || '—'}</td>
-								<td class="max-w-[420px] truncate"
-									><a class="link" href={pg.url} target="_blank" rel="noopener">{pg.url}</a></td
-								>
+								<td class="max-w-[420px] truncate">
+									<a class="link" href={resolve(pg.url)} target="_blank" rel="noopener">{pg.url}</a>
+								</td>
 								<td>{pg.statusCode ?? 'n/a'}</td>
 								<td>{new Date(pg.fetchedAt).toLocaleString()}</td>
 								<td>{pg.contentType ?? 'n/a'}</td>
-								<td><a class="btn btn-sm" href={`/analyzer/page/${pg._id}`}>Open</a></td>
+								<td><a class="btn btn-sm" href={resolve(`/analyzer/page/${pg._id}`)}>Open</a></td>
 							</tr>
 						{/each}
 						{#if pages.length === 0}

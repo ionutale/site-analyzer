@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	let { data } = $props();
 	const page = data.page;
 </script>
 
 <section class="mx-auto max-w-4xl space-y-4 p-4">
-	<a href="/analyzer" class="text-blue-600 hover:underline">← Back to Analyzer</a>
+	<a href={resolve('/analyzer')} class="text-blue-600 hover:underline">← Back to Analyzer</a>
 
 	{#if page}
 		<h1 class="text-2xl font-semibold">{page.title || page.url}</h1>
@@ -20,6 +21,7 @@
 
 		<h2 class="mt-4 text-lg font-medium">Excerpt</h2>
 		<div class="prose max-w-none overflow-x-auto rounded bg-base-200 p-3">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html page.sanitizedExcerpt || ''}
 		</div>
 

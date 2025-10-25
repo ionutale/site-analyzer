@@ -1,8 +1,48 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	let { params } = $props();
 	const siteId = params.siteId as string;
 	let slowMs = $state(3000);
-	let data = $state<any | null>(null);
+	type SeoSampleIdUrl = { _id: string; url: string };
+	type SeoSamples = {
+		slowPages: Array<{ _id: string; url: string; title?: string | null; loadTimeMs: number }>;
+		missingTitlePages: SeoSampleIdUrl[];
+		missingMetaPages: SeoSampleIdUrl[];
+		non200Pages: Array<{ _id: string; url: string; statusCode?: number | null }>;
+		missingCanonicalPages: SeoSampleIdUrl[];
+		shortTitlePages: Array<{
+			_id: string;
+			url: string;
+			title?: string | null;
+			titleLength?: number | null;
+		}>;
+		longTitlePages: Array<{
+			_id: string;
+			url: string;
+			title?: string | null;
+			titleLength?: number | null;
+		}>;
+		duplicateTitles: Array<{ key: string; count: number; urls: string[]; title: string }>;
+		duplicateMeta: Array<{ key: string; count: number; urls: string[]; metaDescription: string }>;
+	};
+	type SeoResponse = {
+		siteId: string;
+		total: number;
+		thresholds: { slowMs: number; minTitleLen: number; maxTitleLen: number };
+		issues: {
+			missingTitle: number;
+			missingMeta: number;
+			slow: number;
+			non200: number;
+			missingCanonical: number;
+			titleTooShort: number;
+			titleTooLong: number;
+			duplicateTitles: number;
+			duplicateMeta: number;
+		};
+		samples: SeoSamples;
+	};
+	let data = $state<SeoResponse | null>(null);
 	let errorMsg = $state<string | null>(null);
 
 	async function loadSeo() {
@@ -11,8 +51,8 @@
 			const res = await fetch(`/api/seo?siteId=${encodeURIComponent(siteId)}&slowMs=${slowMs}`);
 			if (!res.ok) throw new Error('Failed to load SEO data');
 			data = await res.json();
-		} catch (e: any) {
-			errorMsg = e?.message || 'Unknown error';
+		} catch (e: unknown) {
+			errorMsg = e instanceof Error ? e.message : 'Unknown error';
 		}
 	}
 	loadSeo();
@@ -21,7 +61,7 @@
 <section class="space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-3xl font-bold">SEO: <code>{siteId}</code></h1>
-		<a href={`/sites/${siteId}`} class="btn">Back to site</a>
+		<a href={resolve(`/sites/${siteId}`)} class="btn">Back to site</a>
 	</div>
 
 	{#if errorMsg}
@@ -95,8 +135,9 @@
 						<table class="table">
 							<thead><tr><th>URL</th><th>Load (ms)</th></tr></thead>
 							<tbody>
-								{#each data.samples.slowPages as it}
+								{#each data.samples.slowPages as it (it._id)}
 									<tr>
+										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[420px] truncate"
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
@@ -115,8 +156,9 @@
 				<div class="card-body">
 					<h2 class="card-title">Missing title</h2>
 					<ul class="ml-5 list-disc">
-						{#each data.samples.missingTitlePages as it}
+						{#each data.samples.missingTitlePages as it (it._id)}
 							<li class="truncate">
+								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
@@ -130,8 +172,9 @@
 				<div class="card-body">
 					<h2 class="card-title">Missing meta description</h2>
 					<ul class="ml-5 list-disc">
-						{#each data.samples.missingMetaPages as it}
+						{#each data.samples.missingMetaPages as it (it._id)}
 							<li class="truncate">
+								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
@@ -148,8 +191,9 @@
 						<table class="table">
 							<thead><tr><th>URL</th><th>Status</th></tr></thead>
 							<tbody>
-								{#each data.samples.non200Pages as it}
+								{#each data.samples.non200Pages as it (it._id)}
 									<tr>
+										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[420px] truncate"
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
@@ -168,8 +212,9 @@
 				<div class="card-body">
 					<h2 class="card-title">Missing canonical URL</h2>
 					<ul class="ml-5 list-disc">
-						{#each data.samples.missingCanonicalPages as it}
+						{#each data.samples.missingCanonicalPages as it (it._id)}
 							<li class="truncate">
+								<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
@@ -186,10 +231,11 @@
 						<table class="table">
 							<thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
 							<tbody>
-								{#each data.samples.shortTitlePages as it}
+								{#each data.samples.shortTitlePages as it (it._id)}
 									<tr>
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
+										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[320px] truncate"
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
@@ -210,10 +256,11 @@
 						<table class="table">
 							<thead><tr><th>Title</th><th>Len</th><th>URL</th></tr></thead>
 							<tbody>
-								{#each data.samples.longTitlePages as it}
+								{#each data.samples.longTitlePages as it (it._id)}
 									<tr>
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
+										<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 										<td class="max-w-[320px] truncate"
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
@@ -234,14 +281,15 @@
 						<table class="table">
 							<thead><tr><th>Title</th><th>Count</th><th>Sample URLs</th></tr></thead>
 							<tbody>
-								{#each data.samples.duplicateTitles as it}
+								{#each data.samples.duplicateTitles as it (it.key)}
 									<tr>
 										<td class="max-w-[260px] truncate">{it.title}</td>
 										<td>{it.count}</td>
 										<td>
 											<ul class="ml-5 list-disc">
-												{#each it.urls as u}
+												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
+														<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}
@@ -264,14 +312,15 @@
 						<table class="table">
 							<thead><tr><th>Description</th><th>Count</th><th>Sample URLs</th></tr></thead>
 							<tbody>
-								{#each data.samples.duplicateMeta as it}
+								{#each data.samples.duplicateMeta as it (it.key)}
 									<tr>
 										<td class="max-w-[260px] truncate">{it.metaDescription}</td>
 										<td>{it.count}</td>
 										<td>
 											<ul class="ml-5 list-disc">
-												{#each it.urls as u}
+												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
+														<!-- svelte-ignore svelte/no-navigation-without-resolve -->
 														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}

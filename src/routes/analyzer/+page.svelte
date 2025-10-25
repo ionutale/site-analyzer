@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
+	import { resolve } from '$app/paths';
 
 	let siteUrl = $state('');
 	let siteId = $state<string | null>(null);
@@ -14,7 +15,7 @@
 		error: number;
 		total: number;
 	} | null>(null);
-	let timer: any = null;
+	let timer: ReturnType<typeof setInterval> | null = null;
 
 	// links table state
 	type LinkItem = {
@@ -36,7 +37,7 @@
 	let sortBy = $state<'updatedAt' | 'url' | 'status' | 'attempts'>('updatedAt');
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
-	let selected = $state<Set<string>>(new Set());
+	let selected = $state<Set<string>>(new SvelteSet());
 
 	async function ingest() {
 		errorMsg = null;
@@ -55,8 +56,8 @@
 			// start polling
 			startPolling();
 			await fetchLinks();
-		} catch (err: any) {
-			errorMsg = err?.message || 'Unknown error';
+		} catch (err: unknown) {
+			errorMsg = err instanceof Error ? err.message : 'Unknown error';
 		} finally {
 			loading = false;
 		}
@@ -79,7 +80,7 @@
 
 	async function fetchLinks() {
 		if (!siteId) return;
-		const params = new URLSearchParams({
+		const params = new SvelteURLSearchParams({
 			siteId,
 			page: String(page),
 			limit: String(limit),
@@ -94,8 +95,8 @@
 			items = data.items;
 			total = data.total;
 			// clear selection for items no longer visible
-			const visibleIds = new Set(items.map((i) => i._id));
-			selected = new Set([...selected].filter((id) => visibleIds.has(id)));
+			const visibleIds = new SvelteSet(items.map((i) => i._id));
+			selected = new SvelteSet([...selected].filter((id) => visibleIds.has(id)));
 		}
 	}
 
@@ -337,7 +338,7 @@
 										indeterminate={selected.size > 0 && selected.size < items.length}
 										onchange={(e) => {
 											const c = (e.target as HTMLInputElement).checked;
-											selected = new Set(c ? items.map((i) => i._id) : []);
+											selected = new SvelteSet(c ? items.map((i) => i._id) : []);
 										}}
 									/></th
 								>
@@ -349,7 +350,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each items as it}
+							{#each items as it (it._id)}
 								<tr>
 									<td
 										><input
@@ -359,13 +360,13 @@
 												const c = (e.target as HTMLInputElement).checked;
 												if (c) selected.add(it._id);
 												else selected.delete(it._id);
-												selected = new Set(selected);
+												selected = new SvelteSet(selected);
 											}}
 										/></td
 									>
-									<td class="max-w-[420px] truncate"
-										><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
-									>
+									<td class="max-w-[420px] truncate">
+										<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+									</td>
 									<td>
 										<span
 											class="badge {it.status === 'done'
@@ -381,7 +382,7 @@
 									<td>{new Date(it.updatedAt).toLocaleString()}</td>
 									<td>
 										{#if it.pageId}
-											<a class="btn btn-sm" href={`/analyzer/page/${it.pageId}`}>View</a>
+											<a class="btn btn-sm" href={resolve(`/analyzer/page/${it.pageId}`)}>View</a>
 										{:else}
 											<span class="text-sm opacity-50">n/a</span>
 										{/if}

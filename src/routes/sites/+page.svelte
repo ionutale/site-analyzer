@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	let sites = $state<
 		Array<{
 			siteId: string;
@@ -20,8 +21,8 @@
 			const res = await fetch('/api/sites');
 			if (!res.ok) throw new Error('Failed to load sites');
 			sites = await res.json();
-		} catch (e: any) {
-			errorMsg = e?.message || 'Unknown error';
+		} catch (e: unknown) {
+			errorMsg = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
 		}
@@ -55,7 +56,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each sites as s}
+					{#each sites as s (s.siteId)}
 						<tr>
 							<td><code>{s.siteId}</code></td>
 							<td>{s.pending}</td>
@@ -64,7 +65,7 @@
 							<td>{s.error}</td>
 							<td>{s.total}</td>
 							<td>{new Date(s.lastUpdated).toLocaleString()}</td>
-							<td><a class="btn btn-sm" href={`/sites/${s.siteId}`}>Open</a></td>
+							<td><a class="btn btn-sm" href={resolve(`/sites/${s.siteId}`)}>Open</a></td>
 						</tr>
 					{/each}
 					{#if sites.length === 0}

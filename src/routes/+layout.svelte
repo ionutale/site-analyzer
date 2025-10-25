@@ -2,6 +2,7 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	let { children } = $props();
 
@@ -24,7 +25,9 @@
 		themePref = pref;
 		try {
 			localStorage.setItem('themePreference', pref);
-		} catch {}
+		} catch {
+			void 0;
+		}
 		applyTheme(pref);
 	}
 
@@ -45,7 +48,9 @@
 		try {
 			const stored = (localStorage.getItem('themePreference') as ThemePref) || 'system';
 			themePref = stored;
-		} catch {}
+		} catch {
+			void 0;
+		}
 	});
 </script>
 
@@ -75,13 +80,13 @@
 					</label>
 				</div>
 				<div class="flex-1">
-					<a href="/" class="btn text-xl btn-ghost">Site Analyzer</a>
+					<a href={resolve('/')} class="btn text-xl btn-ghost">Site Analyzer</a>
 				</div>
 				<div class="hidden flex-none items-center gap-2 lg:flex">
 					<ul class="menu menu-horizontal px-1">
-						<li><a href="/">Home</a></li>
-						<li><a href="/analyzer">Analyzer</a></li>
-						<li><a href="/sites">Sites</a></li>
+						<li><a href={resolve('/')}>Home</a></li>
+						<li><a href={resolve('/analyzer')}>Analyzer</a></li>
+						<li><a href={resolve('/sites')}>Sites</a></li>
 					</ul>
 					<div class="tooltip" data-tip={themeLabel()}>
 						<button
@@ -136,9 +141,9 @@
 		<label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
 		<ul class="menu min-h-full w-80 bg-base-200 p-4 text-base-content">
 			<li class="menu-title">Navigation</li>
-			<li><a href="/">Home</a></li>
-			<li><a href="/analyzer">Analyzer</a></li>
-			<li><a href="/sites">Sites</a></li>
+			<li><a href={resolve('/')}>Home</a></li>
+			<li><a href={resolve('/analyzer')}>Analyzer</a></li>
+			<li><a href={resolve('/sites')}>Sites</a></li>
 			<li class="mt-4 menu-title">Theme</li>
 			<li>
 				<div class="tooltip" data-tip={themeLabel()}>
