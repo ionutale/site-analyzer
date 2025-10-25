@@ -17,12 +17,54 @@ export const GET: RequestHandler = async ({ url }) => {
 
   const coll = await links();
   const total = await coll.countDocuments(filter);
-  const items = await coll
-    .find(filter, { projection: { _id: 1, url: 1, status: 1, attempts: 1, lastError: 1, updatedAt: 1 } })
-    .sort({ updatedAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .toArray();
 
-  return json({ page, limit, total, items: items.map((d) => ({ ...d, _id: String(d._id) })) });
+  // Use aggregation to join with pages collection to include pageId when available
+  const pipeline = [
+    { $match: filter },
+    { $sort: { updatedAt: -1 } },
+    { $skip: (page - 1) * limit },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: 'pages',
+        let: { siteId: '$siteId', url: '$url' },
+        pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ['$siteId', '$$siteId'] }, { $eq: ['$url', '$$url'] }] } } },
+          { $project: { _id: 1 } }
+        ],
+        as: 'pageMatch'
+      }
+    },
+    {
+      $addFields: {
+        pageId: {
+          $cond: [
+            { $gt: [{ $size: '$pageMatch' }, 0] },
+            { $toString: { $first: '$pageMatch._id' } },
+            null
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        url: 1,
+        status: 1,
+        attempts: 1,
+        lastError: 1,
+        updatedAt: 1,
+        pageId: 1
+      }
+    }
+  ];
+
+  const items = await coll.aggregate(pipeline).toArray();
+
+  return json({
+    page,
+    limit,
+    total,
+    items: items.map((d: any) => ({ ...d, _id: String(d._id) }))
+  });
 };
