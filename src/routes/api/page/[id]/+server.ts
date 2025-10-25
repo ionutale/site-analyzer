@@ -2,6 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { pages } from '$lib/server/db';
 import { ObjectId } from 'mongodb';
+import sanitizeHtml from 'sanitize-html';
 
 export const GET: RequestHandler = async ({ params }) => {
   const { id } = params;
@@ -19,6 +20,11 @@ export const GET: RequestHandler = async ({ params }) => {
   if (!doc) return json({ error: 'Not found' }, { status: 404 });
 
   // Return minimal fields for UI
+  const sanitizedExcerpt = sanitizeHtml(doc.textExcerpt ?? '', {
+    allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'ul', 'ol', 'li', 'br', 'span'],
+    allowedAttributes: { a: ['href', 'rel', 'target'] },
+    transformTags: { a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer', target: '_blank' }) }
+  });
   return json({
     _id: String(doc._id),
     siteId: doc.siteId,
@@ -28,6 +34,8 @@ export const GET: RequestHandler = async ({ params }) => {
     contentType: doc.contentType ?? null,
     title: doc.title ?? null,
     textExcerpt: doc.textExcerpt ?? null,
-    content: doc.content
+    sanitizedExcerpt,
+    content: doc.content,
+    screenshotPath: doc.screenshotPath ?? null
   });
 };
