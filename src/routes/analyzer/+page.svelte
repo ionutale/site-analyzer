@@ -119,7 +119,7 @@
     <button class="btn btn-primary" disabled={loading}>
       {loading ? 'Ingesting…' : 'Ingest sitemap'}
     </button>
-    <button class="btn btn-ghost" type="button" on:click={checkHealth} title="DB health">Health</button>
+  <button class="btn btn-ghost" type="button" onclick={checkHealth} title="DB health">Health</button>
     {#if healthOk !== null}
       <span class="badge {healthOk ? 'badge-success' : 'badge-error'}">{healthOk ? 'DB OK' : 'DB Issue'}</span>
     {/if}
@@ -156,8 +156,8 @@
       <div class="card-body gap-4">
         <div class="flex flex-col sm:flex-row gap-2 items-end">
           <div class="form-control w-full sm:w-48">
-            <label class="label"><span class="label-text">Status</span></label>
-            <select class="select select-bordered" bind:value={statusFilter} on:change={() => { page = 1; fetchLinks(); }}>
+            <label class="label" for="statusFilter"><span class="label-text">Status</span></label>
+            <select id="statusFilter" class="select select-bordered" bind:value={statusFilter} onchange={() => { page = 1; fetchLinks(); }}>
               <option value="">All</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In progress</option>
@@ -166,12 +166,12 @@
             </select>
           </div>
           <div class="form-control w-full">
-            <label class="label"><span class="label-text">Search URL</span></label>
-            <input class="input input-bordered" placeholder="contains…" bind:value={q} on:keydown={(e) => e.key === 'Enter' && (page = 1, fetchLinks())} />
+            <label class="label" for="searchUrl"><span class="label-text">Search URL</span></label>
+            <input id="searchUrl" class="input input-bordered" placeholder="contains…" bind:value={q} onkeydown={(e) => e.key === 'Enter' && (page = 1, fetchLinks())} />
           </div>
           <div class="form-control w-28">
-            <label class="label"><span class="label-text">Page size</span></label>
-            <select class="select select-bordered" bind:value={limit} on:change={() => { page = 1; fetchLinks(); }}>
+            <label class="label" for="pageSize"><span class="label-text">Page size</span></label>
+            <select id="pageSize" class="select select-bordered" bind:value={limit} onchange={() => { page = 1; fetchLinks(); }}>
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
@@ -180,7 +180,7 @@
           </div>
           <div class="flex-1"></div>
           {#if dev}
-            <button class="btn btn-secondary" type="button" on:click={processBatch}>Process batch</button>
+            <button class="btn btn-secondary" type="button" onclick={processBatch}>Process batch</button>
           {/if}
         </div>
 
@@ -221,9 +221,9 @@
         </div>
 
         <div class="flex items-center justify-between">
-          <button class="btn" on:click={() => { if (page > 1) { page -= 1; fetchLinks(); } }} disabled={page <= 1}>Prev</button>
+          <button class="btn" onclick={() => { if (page > 1) { page -= 1; fetchLinks(); } }} disabled={page <= 1}>Prev</button>
           <div class="text-sm">Page {page} of {Math.max(1, Math.ceil(total / limit))} • {total} total</div>
-          <button class="btn" on:click={() => { const max = Math.max(1, Math.ceil(total / limit)); if (page < max) { page += 1; fetchLinks(); } }} disabled={page >= Math.max(1, Math.ceil(total / limit))}>Next</button>
+          <button class="btn" onclick={() => { const max = Math.max(1, Math.ceil(total / limit)); if (page < max) { page += 1; fetchLinks(); } }} disabled={page >= Math.max(1, Math.ceil(total / limit))}>Next</button>
         </div>
       </div>
     </div>

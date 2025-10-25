@@ -3,3 +3,8 @@ than another process will read the links from the collection and run playwright 
 
 The MongoDB instance will be accessible at `mongodb://localhost:27017` with the default database name `sv-app`. You can change these settings in the `docker-compose.yml` file if needed.
 
+-------------
+
+instruction 2
+i also want to analyze the site for SEO purposes, so i want to save the title, meta description, content type, status code and a text excerpt of the page.
+
