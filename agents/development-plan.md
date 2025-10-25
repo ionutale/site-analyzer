@@ -259,7 +259,7 @@ Acceptance criteria
 
 - Visiting `/` renders cards with correct counts and a list of sites
 - Links navigate correctly using `resolve()` for internal routes
-- No blocking on large data; degrades gracefully if some APIs fail (shows partial with alerts)
+- No blocking on large data; degrades gracefully if some APIs fail (shows partial with toast notifications)
 
 ## Toasts/notifications (completed)
 
@@ -271,7 +271,7 @@ Design
 
 API
 
-- Store shape: `{ id: string; type: 'success'|'error'|'info'; message: string; timeout?: number }`
+- Store shape: `{ id: string; kind: 'success'|'error'|'info'; message: string; timeout?: number }`
 - Helpers auto-expire after N ms; manual dismissal supported
 
 Acceptance criteria
