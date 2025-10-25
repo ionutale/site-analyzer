@@ -1,12 +1,16 @@
 import { chromium, type Browser } from 'playwright';
 import pLimit from 'p-limit';
 import crypto from 'node:crypto';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { links, pages, type LinkDoc, type PageDoc } from '../src/lib/server/db';
 
 const HEADLESS = (process.env.PLAYWRIGHT_HEADLESS || 'true') !== 'false';
 const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY || '3');
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS || '3');
 const LEASE_TIMEOUT_MS = Number(process.env.LEASE_TIMEOUT_MS || '900000');
+const SCREENSHOTS = (process.env.PLAYWRIGHT_SCREENSHOTS || 'false') === 'true';
+const SCREENSHOTS_DIR = process.env.SCREENSHOTS_DIR || path.join(process.cwd(), 'static', 'screenshots');
 
 async function leaseOne(): Promise<LinkDoc | null> {
   const coll = await links();
@@ -42,6 +46,19 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
     const excerpt = html.slice(0, 2000);
     const hash = crypto.createHash('sha256').update(html).digest('hex');
 
+    let screenshotPath: string | null = null;
+    if (SCREENSHOTS) {
+      try {
+        await fs.mkdir(SCREENSHOTS_DIR, { recursive: true });
+        const fname = `${doc.siteId}-${crypto.createHash('sha1').update(doc.url).digest('hex')}.jpg`;
+        const fpath = path.join(SCREENSHOTS_DIR, fname);
+        await pg.screenshot({ path: fpath, type: 'jpeg', fullPage: true, quality: 60 });
+        screenshotPath = `/screenshots/${fname}`;
+      } catch (e) {
+        // ignore screenshot errors
+      }
+    }
+
     const now = new Date();
     const pColl = await pages();
     await pColl.updateOne(
@@ -56,7 +73,8 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
           title,
           content: html,
           textExcerpt: excerpt,
-          contentHash: hash
+          contentHash: hash,
+          screenshotPath
         } satisfies Partial<PageDoc>
       },
       { upsert: true }

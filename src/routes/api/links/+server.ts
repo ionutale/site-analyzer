@@ -2,6 +2,16 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { links } from '$lib/server/db';
 
+interface LinkListItem {
+  _id: string;
+  url: string;
+  status: string;
+  attempts: number;
+  lastError?: string;
+  updatedAt: Date;
+  pageId?: string | null;
+}
+
 export const GET: RequestHandler = async ({ url }) => {
   const siteId = url.searchParams.get('siteId');
   if (!siteId) return json({ error: 'Missing siteId' }, { status: 400 });
@@ -59,12 +69,9 @@ export const GET: RequestHandler = async ({ url }) => {
     }
   ];
 
-  const items = await coll.aggregate(pipeline).toArray();
+  type RawItem = Omit<LinkListItem, '_id'> & { _id: unknown };
+  const itemsRaw = await coll.aggregate<RawItem>(pipeline).toArray();
+  const items: LinkListItem[] = itemsRaw.map((d) => ({ ...d, _id: String(d._id) }));
 
-  return json({
-    page,
-    limit,
-    total,
-    items: items.map((d: any) => ({ ...d, _id: String(d._id) }))
-  });
+  return json({ page, limit, total, items });
 };
