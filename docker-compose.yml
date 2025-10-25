@@ -8,10 +8,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      # Dev-only credentials. Change in production.
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      # MONGO_INITDB_DATABASE: app
+      # Dev: run without auth, default DB for convenience
+      MONGO_INITDB_DATABASE: sv-app
     volumes:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
