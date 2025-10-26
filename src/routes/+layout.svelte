@@ -164,8 +164,13 @@
             <ul class="menu flex-1">
                 <li class="menu-title">Navigation</li>
                 <li><a href={resolve('/')} onclick={closeDrawer}>Home</a></li>
-                <li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
-                <li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
+				{#if $user}
+				<li><a href={resolve('/dashboard')} onclick={closeDrawer}>Dashboard</a></li>
+				{/if}
+				{#if $user}
+				<li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
+				<li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
+				{/if}
                 <li class="mt-4 menu-title">Theme</li>
                 <li>
                     <div class="tooltip" data-tip={themeLabel()}>
