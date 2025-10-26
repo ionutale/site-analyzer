@@ -16,6 +16,13 @@ const SCREENSHOTS = (process.env.PLAYWRIGHT_SCREENSHOTS || 'false') === 'true';
 const SCREENSHOTS_DIR =
 	process.env.SCREENSHOTS_DIR || path.join(process.cwd(), 'static', 'screenshots');
 
+// Startup config log for visibility
+console.info(
+	`[worker] headless=${HEADLESS} concurrency=${CONCURRENCY} maxAttempts=${MAX_ATTEMPTS} leaseTimeoutMs=${LEASE_TIMEOUT_MS} screenshots=${SCREENSHOTS ? 'on' : 'off'}${
+		SCREENSHOTS ? ` dir=${SCREENSHOTS_DIR}` : ''
+	}`
+);
+
 async function leaseOne(): Promise<LinkDoc | null> {
 	const coll = await links();
 	const now = new Date();
