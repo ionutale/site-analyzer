@@ -120,3 +120,118 @@ If you prefer a different password or database, edit `docker/mongo-init/01-creat
   uncomment the corresponding volume line in `docker-compose.yml`.
 - Optional web UI: uncomment the `mongo-express` service in `docker-compose.yml` and open
   http://localhost:8081.
+
+## App overview
+
+This project is a site analyzer built with SvelteKit + Tailwind (DaisyUI) and MongoDB. It:
+
+- Ingests links from a site's sitemap
+- Processes pages with a Playwright-based worker (fetches HTML, extracts text/SEO metrics)
+- Surfaces dashboards and tools:
+  - Analyzer: view/crawl status, filter, batch retry/purge, resume stuck jobs
+  - Sites: list sites and per-site dashboards
+  - SEO: missing/duplicate titles/meta/canonical, slow pages, duplicate content by text hash
+  - Home: high-level cards and recent sites
+
+Main routes:
+
+- `/` Home dashboard
+- `/analyzer` Analyzer dashboard
+- `/sites` Sites list
+- `/sites/[siteId]` Site dashboard
+- `/sites/[siteId]/seo` SEO dashboard
+- `/analyzer/page/[id]` Page details
+
+## Environment variables
+
+Copy `.env.example` to `.env` and adjust as needed. Keys used by the app/worker:
+
+- Mongo
+  - `MONGODB_URI` (e.g. `mongodb://local-user:1234567890@localhost:27017/sv-app?authSource=sv-app`)
+  - `MONGODB_DB` (e.g. `sv-app`)
+- Worker/Playwright
+  - `PLAYWRIGHT_HEADLESS` (default `true`)
+  - `WORKER_CONCURRENCY` (default `3`)
+  - `WORKER_MAX_ATTEMPTS` (default `3`)
+  - `LEASE_TIMEOUT_MS` (default `900000` = 15m)
+  - Optional screenshots:
+    - `PLAYWRIGHT_SCREENSHOTS` (`true`/`false`, default `false`)
+    - `SCREENSHOTS_DIR` (default `static/screenshots`)
+- Dev protection (optional)
+  - `DEV_API_TOKEN` — if set, you must send `x-dev-token: <value>` for dev-only endpoints
+- Server-side rate limiting (optional)
+  - `RATE_LIMIT_WINDOW_MS` — time window in ms (enable by setting both WINDOW and TOKENS)
+  - `RATE_LIMIT_TOKENS` — tokens per window
+  - `RATE_LIMIT_BURST` — optional extra capacity (defaults to TOKENS when omitted)
+
+## Running the app and worker
+
+1) Install deps and start the dev server:
+
+```sh
+pnpm install
+pnpm dev
+```
+
+2) In a second terminal, run the Playwright worker (processes leased links):
+
+```sh
+pnpm worker
+```
+
+3) In the UI, open `/analyzer`, enter a site URL, and ingest. Use Resume/Batch actions as needed.
+
+Notes:
+
+- The app expects MongoDB to be running. See the Docker Compose section above for local setup.
+- The worker will compute text-only content and SEO metrics, and optionally write screenshots when enabled.
+
+## Dev endpoints and protections
+
+Some helper endpoints are dev-only and should not be exposed in production without safeguards:
+
+- `POST /api/process-batch` — process a small batch without running the worker loop
+- `POST /api/reset-site?siteId=...` — purge a site's data (links + pages)
+- `POST /api/links/batch` — retry or purge selected links by ID
+- `POST /api/resume?siteId=...` — requeue stale `in_progress` and retry `error` under max attempts
+
+Protections:
+
+- In production (`NODE_ENV=production`), some endpoints return 403 by default
+- If `DEV_API_TOKEN` is set, requests must include header `x-dev-token: <token>`
+- Optional rate limiting (see below)
+
+## Server-side rate limiting (optional)
+
+An in-memory token bucket protects selected endpoints. It’s disabled unless both
+`RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_TOKENS` are provided. Behavior:
+
+- Per-IP, per-key buckets
+- Refills `TOKENS` per `WINDOW_MS`, with optional `RATE_LIMIT_BURST` capacity
+- On exceed, returns HTTP 429 with JSON `{ "error": "rate_limited" }` and `Retry-After`
+
+Environment example:
+
+```
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_TOKENS=60
+RATE_LIMIT_BURST=100
+```
+
+## Screenshots (optional)
+
+Enable screenshots during processing by setting:
+
+```
+PLAYWRIGHT_SCREENSHOTS=true
+# optionally override directory
+# SCREENSHOTS_DIR=static/screenshots
+```
+
+Images will be written under `static/screenshots` (or your configured directory).
+
+## Testing
+
+- Unit: `pnpm test:unit`
+- E2E: `pnpm test:e2e`
+
