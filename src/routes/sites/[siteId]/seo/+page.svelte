@@ -27,11 +27,20 @@
 		duplicateTitles: Array<{ key: string; count: number; urls: string[]; title: string }>;
 		duplicateMeta: Array<{ key: string; count: number; urls: string[]; metaDescription: string }>;
 		duplicateContent: Array<{ key: string; count: number; urls: string[] }>;
+		a11y: {
+			missingAlt: SeoSampleIdUrl[];
+			anchorsWithoutText: SeoSampleIdUrl[];
+			noH1: SeoSampleIdUrl[];
+			multipleH1: SeoSampleIdUrl[];
+		};
+		images: {
+			largeImages: Array<{ pageUrl: string; imageUrl: string }>;
+		};
 	};
 	type SeoResponse = {
 		siteId: string;
 		total: number;
-		thresholds: { slowMs: number; minTitleLen: number; maxTitleLen: number };
+		thresholds: { slowMs: number; minTitleLen: number; maxTitleLen: number; largeImageMinW: number; largeImageMinH: number; largeImageMinArea: number };
 		issues: {
 			missingTitle: number;
 			missingMeta: number;
@@ -40,6 +49,17 @@
 			missingCanonical: number;
 			titleTooShort: number;
 			titleTooLong: number;
+			a11y: {
+				pagesWithMissingAlt: number;
+				pagesWithAnchorNoText: number;
+				pagesWithNoH1: number;
+				pagesWithMultipleH1: number;
+			};
+			images: {
+				totalImages: number;
+				largeImages: number;
+				formats: Record<string, number>;
+			};
 			duplicateTitles: number;
 			duplicateMeta: number;
 			duplicateContent: number;
@@ -129,11 +149,120 @@
 						<div class="stat-title">Duplicate content</div>
 						<div class="stat-value text-lg">{data.issues.duplicateContent}</div>
 					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Alt missing (pages)</div>
+						<div class="stat-value text-lg">{data.issues.a11y.pagesWithMissingAlt}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Anchors no text (pages)</div>
+						<div class="stat-value text-lg">{data.issues.a11y.pagesWithAnchorNoText}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Pages with no H1</div>
+						<div class="stat-value text-lg">{data.issues.a11y.pagesWithNoH1}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Pages with multiple H1</div>
+						<div class="stat-value text-lg">{data.issues.a11y.pagesWithMultipleH1}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Images (total)</div>
+						<div class="stat-value text-lg">{data.issues.images.totalImages}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Large images</div>
+						<div class="stat-value text-lg">{data.issues.images.largeImages}</div>
+					</li>
 				</ul>
 			</div>
 		</div>
 
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Accessibility: images missing alt</h2>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.a11y.missingAlt as it (it._id)}
+							<li class="truncate">
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+							</li>
+						{/each}
+						{#if data.samples.a11y.missingAlt.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Accessibility: anchors without text</h2>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.a11y.anchorsWithoutText as it (it._id)}
+							<li class="truncate">
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+							</li>
+						{/each}
+						{#if data.samples.a11y.anchorsWithoutText.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Accessibility: H1 issues</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Type</th><th>URL</th></tr></thead>
+							<tbody>
+								{#each data.samples.a11y.noH1 as it (it._id)}
+									<tr>
+										<td>No H1</td>
+										<td class="max-w-[420px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
+									</tr>
+								{/each}
+								{#each data.samples.a11y.multipleH1 as it (it._id)}
+									<tr>
+										<td>Multiple H1</td>
+										<td class="max-w-[420px] truncate"><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td>
+									</tr>
+								{/each}
+								{#if data.samples.a11y.noH1.length === 0 && data.samples.a11y.multipleH1.length === 0}
+									<tr><td colspan="2" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Images</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Format</th><th>Count</th></tr></thead>
+							<tbody>
+								{#each Object.entries(data.issues.images.formats) as it (it[0])}
+									<tr><td class="uppercase">{it[0]}</td><td>{it[1]}</td></tr>
+								{/each}
+							</tbody>
+						</table>
+						<p class="mt-2 text-sm opacity-70">Total images: {data.issues.images.totalImages}; Large images (w≥{data.thresholds.largeImageMinW} or h≥{data.thresholds.largeImageMinH} or area≥{data.thresholds.largeImageMinArea}): {data.issues.images.largeImages}</p>
+					</div>
+					<h3 class="mt-4 font-semibold">Sample large images</h3>
+					<ul class="ml-5 list-disc">
+						{#each data.samples.images.largeImages as it (it.pageUrl + it.imageUrl)}
+							<li class="truncate">
+								Page: <a class="link" href={it.pageUrl} target="_blank" rel="noopener">{it.pageUrl}</a>
+								— Image: <a class="link" href={it.imageUrl} target="_blank" rel="noopener">{it.imageUrl}</a>
+							</li>
+						{/each}
+						{#if data.samples.images.largeImages.length === 0}
+							<li class="opacity-70">None</li>
+						{/if}
+					</ul>
+				</div>
+			</div>
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Top slow pages</h2>

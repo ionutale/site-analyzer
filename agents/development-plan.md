@@ -8,7 +8,9 @@ This plan implements a small site analyzer that:
 - Displays a simple dashboard to monitor link statuses and view stored content
 - Provides a Sites section to browse domains and per-site dashboards
 - Includes SEO analysis to surface common issues (missing title/meta, slow pages, non-200s)
-  and extended checks (missing canonical, title length bounds, duplicate titles/meta)
+  and extended checks (missing canonical, title length bounds, duplicate titles/meta),
+  plus accessibility checks (images missing alt, anchors without text, H1 anomalies)
+  and images usage (format breakdown and large images by dimension/area)
 
 MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-app`. You can change these in `docker-compose.yml` or `.env`.
 
@@ -147,7 +149,8 @@ Indexes:
   - `GET src/routes/api/sites/+server.ts` — list all sites with counts and lastUpdated
   - `GET src/routes/api/pages/+server.ts` — list pages per site with pagination/search/sort
   - `GET src/routes/api/seo/+server.ts` — SEO aggregates for a site (missing title/meta, slow pages by threshold, non-200)
-    - Also reports missing canonical, title length issues (min/max bounds), and duplicates for titles/meta
+      - Also reports missing canonical, title length issues (min/max bounds), duplicates (titles/meta/content),
+        accessibility aggregates (missing alts, anchor text, H1 count anomalies), and images metrics (format counts, large images)
 
 ## Worker process
 
@@ -164,6 +167,7 @@ Indexes:
   - Measure `loadTimeMs` as wall-clock duration of navigation+render
   - Extract canonical URL and plain text (`textContent`) for metrics
   - Compute `titleLength`, `contentLength`, `wordCount` for SEO analysis
+  - Accessibility + images quick checks in page context: count images missing alt, anchors without text, H1 count; image formats and large dimensions
   - Optional: capture screenshot when enabled
   - Cap content length (e.g., 2–4 MB), compute hash optionally
   - Upsert in `pages` and set `links.status = 'done'` or `'error'` with `lastError`
@@ -248,7 +252,8 @@ Acceptance criteria
 - `/sites/[siteId]` — per-site dashboard with status cards, links table and pages table (filters/sort/pagination)
   - Header actions include Resume buttons (all / retry-errors) and optional Reset (dev-only)
 - `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
-  - Shows missing canonical, short/long titles, duplicates (titles/meta), slow pages, missing title/meta, non-200
+  - Shows missing canonical, short/long titles, duplicates (titles/meta/content), slow pages, missing title/meta, non-200
+  - New: Accessibility (missing alts, anchor text, H1 anomalies) and Images (format totals and sample large images)
 
 ### Mobile support
 
@@ -394,6 +399,10 @@ Acceptance criteria
 ## Changelog
 
 - 2025-10-26
+  - **Added**: Accessibility checks and image metrics integrated end-to-end
+    - Worker computes a11y (images missing alt, anchors without text, H1 count) and images meta (formats, large dimensions)
+    - SEO API exposes a11y aggregates and image format/large counts plus samples
+    - SEO UI displays new counters, sample pages for a11y issues, and image format breakdown with sample large images
   - **Added**: Public landing page at `/` and a separate authenticated dashboard at `/dashboard`
   - **Added**: SSR route guard via `hooks.server.ts` and client guard in `+layout.svelte`; protected routes redirect to login
   - **Added**: Bottom-anchored auth block in the drawer; hide protected nav items and Theme when signed out
