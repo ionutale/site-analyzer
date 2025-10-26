@@ -25,7 +25,7 @@ MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-ap
   - `MONGODB_URI=mongodb://localhost:27017`
   - `MONGODB_DB=sv-app`
   - `PLAYWRIGHT_HEADLESS=true`
-  - `WORKER_CONCURRENCY=3`
+  - `CONCURRENT_WORKERS=3` (preferred; legacy alias `WORKER_CONCURRENCY` still supported)
   - `WORKER_MAX_ATTEMPTS=3`
   - `LEASE_TIMEOUT_MS=900000` (15 min)
   - Optional: `PLAYWRIGHT_SCREENSHOTS=true` to capture page screenshots under `static/screenshots`

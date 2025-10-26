@@ -6,7 +6,10 @@ import path from 'node:path';
 import { links, pages, type LinkDoc, type PageDoc } from '../src/lib/server/db';
 
 const HEADLESS = (process.env.PLAYWRIGHT_HEADLESS || 'true') !== 'false';
-const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY || '3');
+// Prefer CONCURRENT_WORKERS, fall back to legacy WORKER_CONCURRENCY for backward compatibility
+const CONCURRENCY = Number(
+	process.env.CONCURRENT_WORKERS || process.env.WORKER_CONCURRENCY || '3'
+);
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS || '3');
 const LEASE_TIMEOUT_MS = Number(process.env.LEASE_TIMEOUT_MS || '900000');
 const SCREENSHOTS = (process.env.PLAYWRIGHT_SCREENSHOTS || 'false') === 'true';

@@ -151,7 +151,8 @@ Copy `.env.example` to `.env` and adjust as needed. Keys used by the app/worker:
   - `MONGODB_DB` (e.g. `sv-app`)
 - Worker/Playwright
   - `PLAYWRIGHT_HEADLESS` (default `true`)
-  - `WORKER_CONCURRENCY` (default `3`)
+  - `CONCURRENT_WORKERS` (default `3`) — preferred
+  - `WORKER_CONCURRENCY` — legacy alias, still supported
   - `WORKER_MAX_ATTEMPTS` (default `3`)
   - `LEASE_TIMEOUT_MS` (default `900000` = 15m)
   - Optional screenshots:
