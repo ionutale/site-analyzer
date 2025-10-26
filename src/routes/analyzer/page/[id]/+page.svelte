@@ -5,6 +5,7 @@
 	const page = data.page;
 
 	let busy = $state(false);
+	let busyNow = $state(false);
 	async function reprocess() {
 		if (!page) return;
 		try {
@@ -23,6 +24,25 @@
 			busy = false;
 		}
 	}
+
+	async function processNow() {
+		if (!page) return;
+		try {
+			busyNow = true;
+			const res = await fetch('/api/process-one', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId: page.siteId, url: page.url })
+			});
+			if (!res.ok) throw new Error('Failed to process now');
+			toasts.success('Processing complete. Refresh to see latest data.');
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Process now failed: ${msg}`);
+		} finally {
+			busyNow = false;
+		}
+	}
 </script>
 
 <section class="mx-auto max-w-4xl space-y-4 p-4">
@@ -34,7 +54,10 @@
 				<h1 class="text-2xl font-semibold">{page.title || page.url}</h1>
 				<div class="text-sm opacity-70">{page.url}</div>
 			</div>
-			<button class="btn btn-primary btn-sm" onclick={reprocess} disabled={busy}>Reprocess</button>
+			<div class="flex gap-2">
+				<button class="btn btn-primary btn-sm" onclick={reprocess} disabled={busy}>Reprocess</button>
+				<button class="btn btn-secondary btn-sm" onclick={processNow} disabled={busyNow}>Process now (dev)</button>
+			</div>
 		</div>
 
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
