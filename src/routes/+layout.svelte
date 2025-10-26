@@ -171,20 +171,22 @@
 				<li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
 				<li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
 				{/if}
-                <li class="mt-4 menu-title">Theme</li>
-                <li>
-                    <div class="tooltip" data-tip={themeLabel()}>
-                        <button class="btn" onclick={cycleThemePref} aria-label={themeLabel()}>
-                            {#if themePref === 'light'}
-                                Light
-                            {:else if themePref === 'dark'}
-                                Dark
-                            {:else}
-                                System
-                            {/if}
-                        </button>
-                    </div>
-                </li>
+				{#if $user}
+				<li class="mt-4 menu-title">Theme</li>
+				<li>
+					<div class="tooltip" data-tip={themeLabel()}>
+						<button class="btn" onclick={cycleThemePref} aria-label={themeLabel()}>
+							{#if themePref === 'light'}
+								Light
+							{:else if themePref === 'dark'}
+								Dark
+							{:else}
+								System
+							{/if}
+						</button>
+					</div>
+				</li>
+				{/if}
             </ul>
             <!-- Bottom-anchored auth block -->
             <div class="mt-4 border-t border-base-300 pt-4">

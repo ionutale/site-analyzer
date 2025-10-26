@@ -177,13 +177,13 @@ Optional enhancements:
 
 ### Navigation & layout
 
-- Add a side drawer layout with links to Home, Analyzer, Sites
-- Include a persistent AppBar with a hamburger to open/close the drawer
-- Drawer shows user info (avatar/name) and a Logout button when signed in; Login link when signed out
+- Drawer-only navigation with links to Home and, when signed in, Dashboard, Analyzer, and Sites
+- AppBar with a hamburger to open/close the drawer; drawer is docked on desktop (xl)
+- Drawer shows user info (avatar/name) and actions; auth controls are anchored at the bottom
 - Mobile: Drawer overlays content and closes on route change or backdrop click; keyboard focus trapped while open
-- Place authentication controls at the bottom of the drawer on all breakpoints (Login/Logout & profile summary)
-- Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
-  - Apply theme early (pre-paint) and use DaisyUI themes (light/dark variants)
+- Hide navigation items (Dashboard, Analyzer, Sites) and the Theme section when signed out
+- Compact theme toggle (system/light/dark) with local persistence; applied early (pre-paint) using DaisyUI themes
+- Branding: include a favicon and a logo; logo appears in the AppBar and/or drawer
 
 ### Analyzer page
 
@@ -199,6 +199,12 @@ Optional enhancements:
   - Multi-select with batch actions: retry, purge errors
   - Resume actions: "Resume all" and "Retry errors" buttons call `POST /api/resume`
   - Each row links to content view page
+  - Dev tools:
+    - Concurrency selector for small dev batches
+    - Drain action with an optional "Max processed" input
+    - Progress toast while draining updates every batch
+  - Refresh UX:
+    - Compact progress bar indicates time to the next auto-refresh
 
 ### Authentication & accounts (new)
 
@@ -208,9 +214,10 @@ Optional enhancements:
 - Session & UI state
   - Store minimal user info (uid, displayName, email, photoURL) in a Svelte store
   - Persist user in `localStorage` and restore on startup; react to `onAuthStateChanged`
-  - Gate all app pages behind login, except the public landing page (`/`) and `/login`
-    - Implement route protection via a handle hook or layout guard (redirect to `/login?redirect=...`)
-    - Optionally show a skeleton/placeholder briefly while auth state resolves client-side
+  - Route guards:
+    - SSR: `src/hooks.server.ts` redirects unauthenticated requests for protected routes to `/login?redirect=...` using a lightweight cookie for awareness
+    - Client: `+layout.svelte` guard redirects after hydration when not signed in
+    - UX: show a small loading/skeleton state while auth initializes on protected routes to avoid flash
   - Gate privileged actions in the UI (e.g., batch actions) when signed out; show prompts to sign in
 - Login page `/login`
   - Minimal page with a “Continue with Google” button and copy about permissions
@@ -251,15 +258,21 @@ Acceptance criteria
 
 ### Landing page
 
-- Public marketing-style landing page at `/` with:
-  - Brief description of features
-  - Prominent "Get started" button linking to `/login` (or Analyzer if already signed in)
-  - App logo and minimal hero section
+- Public landing page at `/` with:
+  - Brief description of features and a hero with the app logo
+  - CTA: "Get started" to `/login` when signed out; "Open dashboard" linking to `/dashboard` when signed in
 
 Acceptance criteria
 
 - Landing page loads without auth and includes favicon/logo
-- When signed in, "Get started" navigates to Analyzer; when signed out, to Login
+- When signed in, the primary CTA opens `/dashboard`; when signed out, it navigates to `/login`
+### Dashboard page (new)
+
+- Auth-only dashboard at `/dashboard` with:
+  - Summary cards: total sites, pages analyzed, pages with errors
+  - Recent sites list with quick actions
+  - Link to Sites for full details
+  - Acceptance: requires authentication (SSR/client guards); error states handled gracefully
 - Responsive and accessible (contrast, focus order)
 
 ## Dependencies to add
@@ -380,6 +393,11 @@ Acceptance criteria
 ## Changelog
 
 - 2025-10-26
+  - **Added**: Public landing page at `/` and a separate authenticated dashboard at `/dashboard`
+  - **Added**: SSR route guard via `hooks.server.ts` and client guard in `+layout.svelte`; protected routes redirect to login
+  - **Added**: Bottom-anchored auth block in the drawer; hide protected nav items and Theme when signed out
+  - **Added**: Favicon and logo assets wired into the layout
+  - **Added**: Analyzer progress bar for auto-refresh, dev "Max processed" input, and draining progress toast
   - **Completed**: Homepage dashboard with site statistics and recent sites list
   - **Completed**: Toast notification system with success/error/info helpers
   - **Completed**: Replaced all inline alerts with toasts for ingest, batch actions, reset, and resume
