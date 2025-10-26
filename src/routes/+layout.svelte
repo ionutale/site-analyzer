@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
+    import logo from '$lib/assets/logo.svg';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
     import { goto } from '$app/navigation';
@@ -121,7 +122,10 @@
 					</label>
 				</div>
 				<div class="flex-1">
-					<a href={resolve('/')} class="btn text-xl btn-ghost">Site Analyzer</a>
+					<a href={resolve('/')} class="btn btn-ghost normal-case text-xl flex items-center gap-2">
+						<img src={logo} alt="Site Analyzer" class="h-6 w-6" />
+						<span>Site Analyzer</span>
+					</a>
 				</div>
 				<!-- header right side intentionally minimal; auth and theme live in the drawer -->
 			</div>
