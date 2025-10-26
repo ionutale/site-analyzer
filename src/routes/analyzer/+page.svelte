@@ -39,6 +39,21 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new Set());
+
+	function statusBadgeClass(status: string): string {
+		switch (status) {
+			case 'done':
+				return 'badge-success';
+			case 'error':
+				return 'badge-error';
+			case 'fetching':
+				return 'badge-info';
+			case 'in_progress':
+				return 'badge-warning';
+			default:
+				return '';
+		}
+	}
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -338,6 +353,7 @@
 							<option value="">All</option>
 							<option value="pending">Pending</option>
 							<option value="in_progress">In progress</option>
+							<option value="fetching">Fetching</option>
 							<option value="done">Done</option>
 							<option value="error">Error</option>
 						</select>
@@ -463,15 +479,7 @@
 										<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 									</td>
 									<td>
-										<span
-											class="badge {it.status === 'done'
-												? 'badge-success'
-												: it.status === 'error'
-													? 'badge-error'
-													: it.status === 'in_progress'
-														? 'badge-warning'
-														: ''}">{it.status}</span
-										>
+										<span class="badge {statusBadgeClass(it.status)}">{it.status}</span>
 									</td>
 									<td>{it.attempts}</td>
 									<td>{new Date(it.updatedAt).toLocaleString()}</td>
