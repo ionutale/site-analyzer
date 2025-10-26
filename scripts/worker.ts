@@ -40,7 +40,7 @@ async function leaseOne(): Promise<LinkDoc | null> {
 	const res = await coll.findOneAndUpdate(
 		{ status: 'pending' },
 		{ $set: { status: 'in_progress', leasedAt: now }, $inc: { attempts: 1 } },
-		{ sort: { createdAt: 1 }, returnDocument: 'after' }
+		{ sort: { createdAt: -1, updatedAt: -1, _id: -1 }, returnDocument: 'after' }
 	);
 	return res && res.value ? res.value : null;
 }

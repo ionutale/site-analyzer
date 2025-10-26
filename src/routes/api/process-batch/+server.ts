@@ -26,7 +26,7 @@ async function leaseOne(siteId?: string): Promise<LinkDoc | null> {
 	const doc = await coll.findOneAndUpdate(
 		query,
 		{ $set: { status: 'in_progress', leasedAt: new Date() }, $inc: { attempts: 1 } },
-		{ sort: { createdAt: 1 }, returnDocument: 'after' }
+		{ sort: { createdAt: -1, updatedAt: -1, _id: -1 }, returnDocument: 'after' }
 	);
 	return doc ?? null;
 }

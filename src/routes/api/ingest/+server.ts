@@ -21,7 +21,12 @@ export const POST: RequestHandler = async ({ request }) => {
 	const urls = await collectSitemapUrls(siteUrl);
 
 	const now = new Date();
-	const ops = urls.map((url) => ({
+	const total = urls.length;
+	const ops = urls.map((url, i) => {
+		// Assign per-item timestamps so UI default order (updatedAt desc) matches sitemap order.
+		// First URL gets latest ts, last URL gets earliest.
+		const ts = new Date(now.getTime() + (total - 1 - i));
+		return {
 		updateOne: {
 			filter: { siteId, url },
 			update: {
@@ -30,13 +35,14 @@ export const POST: RequestHandler = async ({ request }) => {
 					url,
 					status: 'pending' as const,
 					attempts: 0,
-					createdAt: now
+					createdAt: ts
 				},
-				$set: { updatedAt: now }
+				$set: { updatedAt: ts }
 			},
 			upsert: true
 		}
-	}));
+	};
+	});
 
 	const coll = await links();
 	const result: BulkWriteResult | { upsertedCount: number } = ops.length
