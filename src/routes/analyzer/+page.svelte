@@ -38,7 +38,7 @@
 	let sortBy = $state<'updatedAt' | 'url' | 'status' | 'attempts'>('updatedAt');
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
-	let selected = $state<Set<string>>(new SvelteSet());
+	let selected = $state<Set<string>>(new Set());
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -88,7 +88,7 @@
 
 	async function fetchLinks() {
 		if (!siteId) return;
-		const params = new SvelteURLSearchParams({
+		const params = new URLSearchParams({
 			siteId,
 			page: String(page),
 			limit: String(limit),
@@ -103,8 +103,8 @@
 			items = data.items;
 			total = data.total;
 			// clear selection for items no longer visible
-			const visibleIds = new SvelteSet(items.map((i) => i._id));
-			selected = new SvelteSet([...selected].filter((id) => visibleIds.has(id)));
+			const visibleIds = new Set(items.map((i) => i._id));
+			selected = new Set([...selected].filter((id) => visibleIds.has(id)));
 		}
 	}
 
@@ -432,7 +432,7 @@
 										indeterminate={selected.size > 0 && selected.size < items.length}
 										onchange={(e) => {
 											const c = (e.target as HTMLInputElement).checked;
-											selected = new SvelteSet(c ? items.map((i) => i._id) : []);
+											selected = new Set(c ? items.map((i) => i._id) : []);
 										}}
 									/></th
 								>
@@ -454,7 +454,7 @@
 												const c = (e.target as HTMLInputElement).checked;
 												if (c) selected.add(it._id);
 												else selected.delete(it._id);
-												selected = new SvelteSet(selected);
+												selected = new Set(selected);
 											}}
 										/></td
 									>

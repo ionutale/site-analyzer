@@ -52,7 +52,7 @@
 		if (res.ok) stats = await res.json();
 	}
 	async function fetchLinks() {
-		const qp = new SvelteURLSearchParams({
+		const qp = new URLSearchParams({
 			siteId,
 			page: String(lpage),
 			limit: String(llimit),
@@ -69,7 +69,7 @@
 		}
 	}
 	async function fetchPages() {
-		const qp = new SvelteURLSearchParams({
+		const qp = new URLSearchParams({
 			siteId,
 			page: String(ppage),
 			limit: String(plimit),
