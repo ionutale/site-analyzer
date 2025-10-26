@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
     import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
 
 	import { toasts } from '$lib/stores/toast';
     import { user } from '$lib/stores/user';
@@ -59,6 +60,22 @@
 
 		// start auth listener
 		user.start();
+	});
+
+	// Client-side route guard: require auth for all non-public routes
+	const PUBLIC_PATHS = new Set(['/','/login']);
+	$effect(() => {
+		const pathname = $page.url.pathname;
+		const search = $page.url.search;
+		const u = $user;
+		// Only run in the browser
+		if (typeof window === 'undefined') return;
+		if (!PUBLIC_PATHS.has(pathname) && !u) {
+			const redirect = encodeURIComponent(pathname + (search || ''));
+			// Build href using a literal path for resolve, then append query string
+			const loginBase = resolve('/login');
+			(goto as unknown as (href: string) => Promise<void>)(`${loginBase}?redirect=${redirect}`);
+		}
 	});
 
 	function closeDrawer() {
@@ -120,43 +137,49 @@
 	</div>
 	<div class="drawer-side">
 		<label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
-		<ul class="menu min-h-full w-80 bg-base-200 p-4 text-base-content">
-			{#if $user}
-				<li class="mb-2">
-					<div class="flex items-center gap-3">
-						{#if $user.photoURL}
-							<img src={$user.photoURL} alt="Avatar" class="mask mask-squircle h-10 w-10" />
-						{/if}
-						<div>
-							<div class="font-semibold">{$user.displayName || 'Account'}</div>
-							<div class="text-xs opacity-70">{$user.email}</div>
-						</div>
-					</div>
-				</li>
-				<li><a href={resolve('/profile')} onclick={closeDrawer}>Profile</a></li>
-				<li><button onclick={() => { closeDrawer(); logout(); }}>Logout</button></li>
-			{:else}
-				<li><a class="btn btn-primary" href={resolve('/login')} onclick={closeDrawer}>Login</a></li>
-			{/if}
-			<li class="menu-title">Navigation</li>
-			<li><a href={resolve('/')} onclick={closeDrawer}>Home</a></li>
-			<li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
-			<li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
-			<li class="mt-4 menu-title">Theme</li>
-			<li>
-				<div class="tooltip" data-tip={themeLabel()}>
-					<button class="btn" onclick={cycleThemePref} aria-label={themeLabel()}>
-						{#if themePref === 'light'}
-							Light
-						{:else if themePref === 'dark'}
-							Dark
-						{:else}
-							System
-						{/if}
-					</button>
-				</div>
-			</li>
-		</ul>
+		<div class="min-h-full w-80 bg-base-200 p-4 text-base-content flex flex-col">
+            <!-- Main navigation and tools -->
+            <ul class="menu flex-1">
+                <li class="menu-title">Navigation</li>
+                <li><a href={resolve('/')} onclick={closeDrawer}>Home</a></li>
+                <li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
+                <li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
+                <li class="mt-4 menu-title">Theme</li>
+                <li>
+                    <div class="tooltip" data-tip={themeLabel()}>
+                        <button class="btn" onclick={cycleThemePref} aria-label={themeLabel()}>
+                            {#if themePref === 'light'}
+                                Light
+                            {:else if themePref === 'dark'}
+                                Dark
+                            {:else}
+                                System
+                            {/if}
+                        </button>
+                    </div>
+                </li>
+            </ul>
+            <!-- Bottom-anchored auth block -->
+            <div class="mt-4 border-t border-base-300 pt-4">
+                {#if $user}
+                    <div class="mb-2 flex items-center gap-3">
+                        {#if $user.photoURL}
+                            <img src={$user.photoURL} alt="Avatar" class="mask mask-squircle h-10 w-10" />
+                        {/if}
+                        <div>
+                            <div class="font-semibold">{$user.displayName || 'Account'}</div>
+                            <div class="text-xs opacity-70">{$user.email}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a class="btn btn-ghost" href={resolve('/profile')} onclick={closeDrawer}>Profile</a>
+                        <button class="btn" onclick={() => { closeDrawer(); logout(); }}>Logout</button>
+                    </div>
+                {:else}
+                    <a class="btn btn-primary w-full" href={resolve('/login')} onclick={closeDrawer}>Login</a>
+                {/if}
+            </div>
+        </div>
 	</div>
 </div>
 

@@ -51,6 +51,7 @@
 	let batchLoading = $state(false);
 	// dev processing controls
 	let devCount = $state(3);
+	let devMax = $state<number | ''>('');
 	let draining = $state(false);
 	// in-progress table state
 	let ingestingItems = $state<LinkItem[]>([]);
@@ -204,15 +205,30 @@
 		if (!siteId) return;
 		try {
 			draining = true;
-			const res = await fetch(
-				`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=${encodeURIComponent(String(devCount))}&drain=true`,
-				{ method: 'POST' }
-			);
-			if (!res.ok) throw new Error('Drain request failed');
-			const data = await res.json();
-			toasts.success(`Drained: processed ${data.processedCount || 0} link(s)`);
-			await fetchStatus();
-			await fetchLinks();
+			let processedTotal = 0;
+			const cap = devMax === '' ? Infinity : Math.max(0, Number(devMax) || 0);
+			let progressToastId = toasts.info('Draining… processed 0', 0);
+			for (;;) {
+				const res = await fetch(
+					`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=${encodeURIComponent(String(devCount))}`,
+					{ method: 'POST' }
+				);
+				if (!res.ok) throw new Error('Drain request failed');
+				const data = await res.json();
+				const n = Number(data?.processedCount || 0);
+				if (!n) break;
+				processedTotal += n;
+				// update progress toast
+				toasts.dismiss(progressToastId);
+				progressToastId = toasts.info(`Draining… processed ${processedTotal}`, 0);
+				await fetchStatus();
+				await fetchLinks();
+				if (processedTotal >= cap) break;
+				// gentle pacing to avoid UI thrash
+				await new Promise((r) => setTimeout(r, 300));
+			}
+			toasts.dismiss(progressToastId);
+			toasts.success(`Drained: processed ${processedTotal} link(s)`);
 		} catch (e: unknown) {
 			const msg = e instanceof Error ? e.message : 'Unknown error';
 			toasts.error(`Drain failed: ${msg}`);
@@ -525,7 +541,7 @@
 						</select>
 					</div>
 					<div class="flex-1"></div>
-					{#if dev}
+                    {#if dev}
 						<div class="flex items-end gap-2">
 							<div class="form-control w-28">
 								<label class="label" for="devCount"><span class="label-text">Concurrency</span></label>
@@ -539,6 +555,10 @@
 									<option value={8}>8</option>
 									<option value={10}>10</option>
 								</select>
+							</div>
+							<div class="form-control w-32">
+								<label class="label" for="devMax"><span class="label-text">Max processed</span></label>
+								<input id="devMax" class="input input-bordered" type="number" min="0" placeholder="∞" bind:value={devMax} />
 							</div>
 							<button class="btn btn-secondary" type="button" onclick={processBatch}
 								>Process batch</button
