@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
 	let sites = $state<
@@ -27,7 +28,9 @@
 			loading = false;
 		}
 	}
-	loadSites();
+	onMount(() => {
+		loadSites();
+	});
 </script>
 
 <section class="space-y-4">

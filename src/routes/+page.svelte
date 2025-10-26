@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 
 	type SiteInfo = {
@@ -41,7 +42,9 @@
 			loading = false;
 		}
 	}
-	load();
+	onMount(() => {
+		load();
+	});
 </script>
 
 <section class="space-y-6">
