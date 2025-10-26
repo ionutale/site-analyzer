@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
@@ -84,9 +85,11 @@
 			pagesTotal = data.total;
 		}
 	}
-	fetchStatus();
-	fetchLinks();
-	fetchPages();
+	onMount(() => {
+		fetchStatus();
+		fetchLinks();
+		fetchPages();
+	});
 
 	async function resetSite() {
 		if (!dev) return;

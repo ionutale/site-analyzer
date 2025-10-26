@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
 	let { params } = $props();
@@ -57,7 +58,9 @@
 			toasts.error(`Failed to load SEO data: ${msg}`);
 		}
 	}
-	loadSeo();
+	onMount(() => {
+		loadSeo();
+	});
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
