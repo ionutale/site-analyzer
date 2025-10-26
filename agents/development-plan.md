@@ -181,6 +181,7 @@ Optional enhancements:
 - Include a persistent AppBar with a hamburger to open/close the drawer
 - Drawer shows user info (avatar/name) and a Logout button when signed in; Login link when signed out
 - Mobile: Drawer overlays content and closes on route change or backdrop click; keyboard focus trapped while open
+- Place authentication controls at the bottom of the drawer on all breakpoints (Login/Logout & profile summary)
 - Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
   - Apply theme early (pre-paint) and use DaisyUI themes (light/dark variants)
 
@@ -207,6 +208,9 @@ Optional enhancements:
 - Session & UI state
   - Store minimal user info (uid, displayName, email, photoURL) in a Svelte store
   - Persist user in `localStorage` and restore on startup; react to `onAuthStateChanged`
+  - Gate all app pages behind login, except the public landing page (`/`) and `/login`
+    - Implement route protection via a handle hook or layout guard (redirect to `/login?redirect=...`)
+    - Optionally show a skeleton/placeholder briefly while auth state resolves client-side
   - Gate privileged actions in the UI (e.g., batch actions) when signed out; show prompts to sign in
 - Login page `/login`
   - Minimal page with a “Continue with Google” button and copy about permissions
@@ -221,6 +225,7 @@ Acceptance criteria
 - Signed-out users see a Login button; signing in updates header/drawer immediately
 - Logout clears session and returns to a public route; protected controls are disabled when signed out
 - Type-safe stores; no Svelte/TS errors; UI degrades gracefully without Firebase network connectivity
+- All non-public routes require authentication (verified by attempting direct navigation + refresh)
 
 ### Content view page
 
@@ -244,6 +249,19 @@ Acceptance criteria
 - Tables scroll horizontally with sticky headers on small screens; pagination and filters stack vertically
 - Performance: avoid blocking SSR; defer heavy client code; test on iOS Safari and Android Chrome
 
+### Landing page
+
+- Public marketing-style landing page at `/` with:
+  - Brief description of features
+  - Prominent "Get started" button linking to `/login` (or Analyzer if already signed in)
+  - App logo and minimal hero section
+
+Acceptance criteria
+
+- Landing page loads without auth and includes favicon/logo
+- When signed in, "Get started" navigates to Analyzer; when signed out, to Login
+- Responsive and accessible (contrast, focus order)
+
 ## Dependencies to add
 
 - `mongodb` (official driver)
@@ -254,6 +272,7 @@ Acceptance criteria
 - Playwright already present; ensure Chromium is installed (`npx playwright install chromium`)
 - Optional (future): text similarity for duplicate clustering (e.g., `string-similarity` or implement shingling)
 - `firebase` (client SDK for Firebase Auth)
+  - Assets: app favicon and logo (used in `<svelte:head>` and header/drawer)
 
 ## Scripts (package.json)
 
