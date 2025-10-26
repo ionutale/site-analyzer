@@ -18,6 +18,7 @@ MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-ap
 - Database: MongoDB (local via Docker)
 - Headless browser: Playwright (Chromium)
 - Language: TypeScript
+- Authentication: Firebase Auth (Google provider)
 
 ## Environment configuration
 
@@ -30,6 +31,10 @@ MongoDB (dev) is reachable at `mongodb://localhost:27017` with default DB `sv-ap
   - `LEASE_TIMEOUT_MS=900000` (15 min)
   - Optional: `PLAYWRIGHT_SCREENSHOTS=true` to capture page screenshots under `static/screenshots`
   - Optional: `DEV_API_TOKEN=...` to protect dev endpoints via `x-dev-token` header
+
+Auth configuration
+
+- Web client Firebase config lives in `src/lib/firebase-config.ts` (public keys). For production, consider swapping via environment-driven import or build-time replacement.
 
 Note: If you keep Mongo auth enabled, add `MONGODB_URI` with creds accordingly.
 
@@ -173,6 +178,9 @@ Optional enhancements:
 ### Navigation & layout
 
 - Add a side drawer layout with links to Home, Analyzer, Sites
+- Include a persistent AppBar with a hamburger to open/close the drawer
+- Drawer shows user info (avatar/name) and a Logout button when signed in; Login link when signed out
+- Mobile: Drawer overlays content and closes on route change or backdrop click; keyboard focus trapped while open
 - Add a compact theme toggle button (system/light/dark) with persistence (localStorage)
   - Apply theme early (pre-paint) and use DaisyUI themes (light/dark variants)
 
@@ -191,6 +199,29 @@ Optional enhancements:
   - Resume actions: "Resume all" and "Retry errors" buttons call `POST /api/resume`
   - Each row links to content view page
 
+### Authentication & accounts (new)
+
+- Sign-in with Google using Firebase Auth (client SDK)
+  - Initialize Firebase app using `src/lib/firebase-config.ts`
+  - Use `GoogleAuthProvider` and `signInWithPopup` (fallback to redirect on mobile Safari)
+- Session & UI state
+  - Store minimal user info (uid, displayName, email, photoURL) in a Svelte store
+  - Persist user in `localStorage` and restore on startup; react to `onAuthStateChanged`
+  - Gate privileged actions in the UI (e.g., batch actions) when signed out; show prompts to sign in
+- Login page `/login`
+  - Minimal page with a “Continue with Google” button and copy about permissions
+  - On success, redirect to previous route or `/`
+- Logout button
+  - Available in the AppBar menu and Drawer; calls `signOut()` and toasts confirmation
+- User profile page `/profile`
+  - Shows account info and recent activity (optional), and a Logout button
+
+Acceptance criteria
+
+- Signed-out users see a Login button; signing in updates header/drawer immediately
+- Logout clears session and returns to a public route; protected controls are disabled when signed out
+- Type-safe stores; no Svelte/TS errors; UI degrades gracefully without Firebase network connectivity
+
 ### Content view page
 
 - File: `src/routes/analyzer/page/[id]/+page.svelte`
@@ -206,6 +237,13 @@ Optional enhancements:
 - `/sites/[siteId]/seo` — SEO analysis dashboard with summary metrics and samples; adjustable slow threshold
   - Shows missing canonical, short/long titles, duplicates (titles/meta), slow pages, missing title/meta, non-200
 
+### Mobile support
+
+- Responsive layout for all primary pages (Home, Analyzer, Sites, SEO, Profile)
+- Navigation drawer adapts to mobile (overlay) and desktop (docked on xl); large touch targets (min 44px)
+- Tables scroll horizontally with sticky headers on small screens; pagination and filters stack vertically
+- Performance: avoid blocking SSR; defer heavy client code; test on iOS Safari and Android Chrome
+
 ## Dependencies to add
 
 - `mongodb` (official driver)
@@ -215,6 +253,7 @@ Optional enhancements:
 - `p-limit` (optional, control concurrency)
 - Playwright already present; ensure Chromium is installed (`npx playwright install chromium`)
 - Optional (future): text similarity for duplicate clustering (e.g., `string-similarity` or implement shingling)
+- `firebase` (client SDK for Firebase Auth)
 
 ## Scripts (package.json)
 
@@ -397,6 +436,22 @@ Acceptance criteria
 - When combining sort + pagination in the Sites list, move sorting responsibility to the parent so slicing happens after sort
 - Optional micro progress indicator above StatusSummary during auto-refresh
 
+### Phase 7: Authentication & Mobile (planned)
+
+- Authentication
+  - Firebase Auth with Google provider; login page and logout button
+  - Drawer shows auth state (avatar/name) and sign-in/out actions
+  - Profile page with basic account info
+- Mobile support
+  - Drawer overlay on small screens; accessible focus trapping and backdrop
+  - Responsive tables and controls; sticky headers where applicable
+
+Acceptance criteria
+
+- Sign in/out flows working on desktop and mobile; protected controls reflect auth state
+- Profile page accessible via drawer; logout available in at least two places (header and profile)
+- Lighthouse mobile passes for basic interactivity (FID/INP acceptable) and accessibility checks on key screens
+
 ## Risks & mitigations
 
 - Large/complex sitemaps → stream parsing or chunked ingestion; handle sitemap index
@@ -421,3 +476,6 @@ Acceptance criteria
 - `src/routes/analyzer/+page.svelte`
 - `src/routes/analyzer/page/[id]/+page.svelte`
 - `scripts/worker.ts`
+- `src/routes/login/+page.svelte`
+- `src/routes/profile/+page.svelte`
+- `src/lib/auth/firebase.ts` (Firebase app/auth initialization and helpers)
