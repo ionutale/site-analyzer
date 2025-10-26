@@ -159,15 +159,18 @@
 <section class="space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-3xl font-bold">Site: <code>{siteId}</code></h1>
-		<div class="flex items-center gap-2">
-			<a class="btn" href={resolve(`/sites/${siteId}/seo`)}>SEO</a>
-			<div class="btn-group">
-				<button class="btn" onclick={() => resume('all')}>Resume all</button>
-				<button class="btn" onclick={() => resume('retry-errors')}>Retry errors</button>
+		<div class="flex flex-wrap items-center gap-2">
+			<a class="btn btn-ghost btn-sm" href={resolve(`/sites/${siteId}/seo`)}>SEO</a>
+			<div class="dropdown dropdown-end">
+				<button class="btn btn-sm" aria-haspopup="menu" aria-label="Resume options">Resume</button>
+				<ul class="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow">
+					<li><button onclick={() => resume('all')}>Resume all</button></li>
+					<li><button onclick={() => resume('retry-errors')}>Retry errors</button></li>
+				</ul>
 			</div>
-			<button class="btn btn-primary" onclick={refetchSite}>Refetch site</button>
+			<button class="btn btn-primary btn-sm" onclick={refetchSite}>Refetch</button>
 			{#if dev}
-				<button class="btn btn-error" onclick={resetSite}>Reset site</button>
+				<button class="btn btn-error btn-sm" onclick={resetSite}>Reset</button>
 			{/if}
 		</div>
 	</div>
