@@ -71,6 +71,52 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 			.catch(() => '');
 		const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
 
+		// Accessibility + images quick checks in the page context
+		const a11yAndImages = await pg.evaluate(() => {
+			function extFromUrl(u: string): string {
+				try {
+					const url = new URL(u, location.href);
+					const p = url.pathname.toLowerCase();
+					const m = p.match(/\.([a-z0-9]+)$/);
+					return m ? m[1] : '';
+				} catch {
+					return '';
+				}
+			}
+
+			const imgs = Array.from(document.images || []).map((img) => ({
+				src: (img as HTMLImageElement).currentSrc || (img as HTMLImageElement).src || '',
+				alt: (img as HTMLImageElement).alt || '',
+				w: (img as HTMLImageElement).naturalWidth || 0,
+				h: (img as HTMLImageElement).naturalHeight || 0
+			}));
+			const imagesMissingAlt = imgs.filter((i) => !i.alt || !i.alt.trim()).length;
+			const total = imgs.length;
+			const counts: Record<string, number> = { avif: 0, webp: 0, jpeg: 0, jpg: 0, png: 0, gif: 0, svg: 0, other: 0 };
+			const large: string[] = [];
+			imgs.forEach((i) => {
+				const ext = extFromUrl(i.src);
+				if (ext in counts) counts[ext]++;
+				else if (ext === 'jpe') counts.jpeg++;
+				else counts.other++;
+				const area = i.w * i.h;
+				if (i.w >= 1600 || i.h >= 1600 || area >= 2_000_000) {
+					if (large.length < 5) large.push(i.src);
+				}
+			});
+
+			const anchors = Array.from(document.querySelectorAll('a')) as HTMLAnchorElement[];
+			const anchorsWithoutText = anchors.filter(
+				(a) => !(a.textContent && a.textContent.trim()) && !(a.getAttribute('aria-label') || '').trim()
+			).length;
+			const h1Count = document.querySelectorAll('h1').length;
+
+			return {
+				a11y: { imagesMissingAlt, anchorsWithoutText, h1Count },
+				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large }
+			};
+		});
+
 		const excerpt = html.slice(0, 2000);
 		const normalizedText = (textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
 		const hash = crypto.createHash('sha256').update(normalizedText).digest('hex');
@@ -113,7 +159,8 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 					textContent: textContent || null,
 					wordCount,
 					contentHash: hash,
-					screenshotPath
+					screenshotPath,
+					...a11yAndImages
 				} satisfies Partial<PageDoc>
 			},
 			{ upsert: true }

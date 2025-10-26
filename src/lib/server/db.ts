@@ -63,6 +63,22 @@ export interface PageDoc extends Document {
 	screenshotPath?: string | null;
 	contentLength?: number | null; // characters in content
 	wordCount?: number | null;
+	// Accessibility quick metrics
+	a11y?: {
+ 		imagesMissingAlt?: number;
+ 		anchorsWithoutText?: number;
+ 		h1Count?: number;
+ 	};
+
+ 	// Images metadata (lightweight)
+ 	imagesMeta?: {
+ 		total?: number;
+ 		counts?: {
+ 			avif?: number; webp?: number; jpeg?: number; jpg?: number; png?: number; gif?: number; svg?: number; other?: number;
+ 		};
+ 		largeDimensions?: number; // images with large pixel area or width/height over threshold
+ 		sampleLarge?: string[]; // a few example URLs
+ 	};
 }
 
 export async function links(): Promise<Collection<LinkDoc>> {
