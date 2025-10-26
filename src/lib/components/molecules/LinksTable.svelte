@@ -13,9 +13,10 @@
 
   const dispatch = createEventDispatcher<{ selectionChange: Set<string> }>();
 
-  let { items, selected = new Set<string>() } = $props<{
+  let { items, selected = new Set<string>(), showSelection = true } = $props<{
     items: LinkItem[];
     selected?: Set<string>;
+    showSelection?: boolean;
   }>();
 
   function setSelected(next: Set<string>) {
@@ -46,14 +47,16 @@
   <table class="table">
     <thead>
       <tr>
-        <th>
-          <input
-            type="checkbox"
-            checked={items.length > 0 && selected.size === items.length}
-            indeterminate={selected.size > 0 && selected.size < items.length}
-            onchange={(e) => toggleAll((e.target as HTMLInputElement).checked)}
-          />
-        </th>
+        {#if showSelection}
+          <th>
+            <input
+              type="checkbox"
+              checked={items.length > 0 && selected.size === items.length}
+              indeterminate={selected.size > 0 && selected.size < items.length}
+              onchange={(e) => toggleAll((e.target as HTMLInputElement).checked)}
+            />
+          </th>
+        {/if}
         <th>URL</th>
         <th>Status</th>
         <th>Attempts</th>
@@ -64,13 +67,15 @@
     <tbody>
       {#each items as it (it._id)}
         <tr>
-          <td>
-            <input
-              type="checkbox"
-              checked={selected.has(it._id)}
-              onchange={(e) => toggleOne(it._id, (e.target as HTMLInputElement).checked)}
-            />
-          </td>
+          {#if showSelection}
+            <td>
+              <input
+                type="checkbox"
+                checked={selected.has(it._id)}
+                onchange={(e) => toggleOne(it._id, (e.target as HTMLInputElement).checked)}
+              />
+            </td>
+          {/if}
           <td class="max-w-[420px] truncate">
             <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
             <a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>

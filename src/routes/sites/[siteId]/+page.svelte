@@ -3,6 +3,9 @@
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
+	import StatusSummary from '$lib/components/molecules/StatusSummary.svelte';
+	import LinksTable from '$lib/components/molecules/LinksTable.svelte';
+	import PagesTable from '$lib/components/molecules/PagesTable.svelte';
 	let { params } = $props();
 	const siteId = params.siteId as string;
 
@@ -167,28 +170,7 @@
 						</div>
 					</div>
 					<div class="divider lg:divider-horizontal"></div>
-					<ul class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Pending</div>
-							<div class="stat-value text-lg">{stats.pending}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">In progress</div>
-							<div class="stat-value text-lg">{stats.in_progress}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Done</div>
-							<div class="stat-value text-lg">{stats.done}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Error</div>
-							<div class="stat-value text-lg">{stats.error}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Total</div>
-							<div class="stat-value text-lg">{stats.total}</div>
-						</li>
-					</ul>
+					<StatusSummary {stats} />
 				</div>
 			</div>
 		</div>
@@ -276,51 +258,7 @@
 				</div>
 			</div>
 
-			<div class="overflow-x-auto">
-				<table class="table">
-					<thead>
-						<tr>
-							<th>URL</th>
-							<th>Status</th>
-							<th>Attempts</th>
-							<th>Updated</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each links as it (it._id)}
-							<tr>
-								<td class="max-w-[420px] truncate">
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-									<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
-								</td>
-								<td
-									><span
-										class="badge {it.status === 'done'
-											? 'badge-success'
-											: it.status === 'error'
-												? 'badge-error'
-												: it.status === 'in_progress'
-													? 'badge-warning'
-													: ''}">{it.status}</span
-									></td
-								>
-								<td>{it.attempts}</td>
-								<td>{new Date(it.updatedAt).toLocaleString()}</td>
-								<td
-									>{#if it.pageId}<a
-											class="btn btn-sm"
-											href={resolve(`/analyzer/page/${it.pageId}`)}>View</a
-										>{:else}<span class="text-sm opacity-50">n/a</span>{/if}</td
-								>
-							</tr>
-						{/each}
-						{#if links.length === 0}
-							<tr><td colspan="5" class="text-center opacity-70">No items</td></tr>
-						{/if}
-					</tbody>
-				</table>
-			</div>
+			<LinksTable items={links} showSelection={false} />
 
 			<div class="flex items-center justify-between">
 				<button
@@ -415,38 +353,7 @@
 				</div>
 			</div>
 
-			<div class="overflow-x-auto">
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Title</th>
-							<th>URL</th>
-							<th>Status</th>
-							<th>Fetched</th>
-							<th>Type</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each pages as pg (pg._id)}
-							<tr>
-								<td class="max-w-[320px] truncate">{pg.title || '—'}</td>
-								<td class="max-w-[420px] truncate">
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-									<a class="link" href={pg.url} target="_blank" rel="noopener">{pg.url}</a>
-								</td>
-								<td>{pg.statusCode ?? 'n/a'}</td>
-								<td>{new Date(pg.fetchedAt).toLocaleString()}</td>
-								<td>{pg.contentType ?? 'n/a'}</td>
-								<td><a class="btn btn-sm" href={resolve(`/analyzer/page/${pg._id}`)}>Open</a></td>
-							</tr>
-						{/each}
-						{#if pages.length === 0}
-							<tr><td colspan="6" class="text-center opacity-70">No pages</td></tr>
-						{/if}
-					</tbody>
-				</table>
-			</div>
+			<PagesTable items={pages} />
 
 			<div class="flex items-center justify-between">
 				<button
