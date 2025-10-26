@@ -3,6 +3,8 @@
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
+	import StatusSummary from '$lib/components/molecules/StatusSummary.svelte';
+	import LinksTable from '$lib/components/molecules/LinksTable.svelte';
 
 	let siteUrl = $state('');
 	let siteId = $state<string | null>(null);
@@ -293,32 +295,7 @@
 					</div>
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
-				{#if stats}
-					<ul class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Pending</div>
-							<div class="stat-value text-lg">{stats.pending}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">In progress</div>
-							<div class="stat-value text-lg">{stats.in_progress}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Done</div>
-							<div class="stat-value text-lg">{stats.done}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Error</div>
-							<div class="stat-value text-lg">{stats.error}</div>
-						</li>
-						<li class="stat rounded-box bg-base-100">
-							<div class="stat-title">Total</div>
-							<div class="stat-value text-lg">{stats.total}</div>
-						</li>
-					</ul>
-				{:else}
-					<p class="mt-2 text-sm opacity-70">Waiting for first status update…</p>
-				{/if}
+				<StatusSummary {stats} />
 			</div>
 		</div>
 
@@ -423,67 +400,7 @@
 					</button>
 				</div>
 
-				<div class="overflow-x-auto">
-					<table class="table">
-						<thead>
-							<tr>
-								<th
-									><input
-										type="checkbox"
-										checked={items.length > 0 && selected.size === items.length}
-										indeterminate={selected.size > 0 && selected.size < items.length}
-										onchange={(e) => {
-											const c = (e.target as HTMLInputElement).checked;
-											selected = new Set(c ? items.map((i) => i._id) : []);
-										}}
-									/></th
-								>
-								<th>URL</th>
-								<th>Status</th>
-								<th>Attempts</th>
-								<th>Updated</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each items as it (it._id)}
-								<tr>
-									<td
-										><input
-											type="checkbox"
-											checked={selected.has(it._id)}
-											onchange={(e) => {
-												const c = (e.target as HTMLInputElement).checked;
-												if (c) selected.add(it._id);
-												else selected.delete(it._id);
-												selected = new Set(selected);
-											}}
-										/></td
-									>
-									<td class="max-w-[420px] truncate">
-										<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-										<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
-									</td>
-									<td>
-										<StatusBadge status={it.status} />
-									</td>
-									<td>{it.attempts}</td>
-									<td>{new Date(it.updatedAt).toLocaleString()}</td>
-									<td>
-										{#if it.pageId}
-											<a class="btn btn-sm" href={resolve(`/analyzer/page/${it.pageId}`)}>View</a>
-										{:else}
-											<span class="text-sm opacity-50">n/a</span>
-										{/if}
-									</td>
-								</tr>
-							{/each}
-							{#if items.length === 0}
-								<tr><td colspan="5" class="text-center opacity-70">No items</td></tr>
-							{/if}
-						</tbody>
-					</table>
-				</div>
+				<LinksTable {items} selected={selected} on:selectionChange={(e) => (selected = e.detail)} />
 
 				<div class="flex items-center justify-between gap-2">
 					<div class="flex items-center gap-2">
