@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/private';
 import { chromium, type Browser } from 'playwright';
 import { links, pages, type LinkDoc, type PageDoc } from '$lib/server/db';
 import { rateLimitCheck } from '$lib/server/rate-limit';
+import crypto from 'node:crypto';
 
 const HEADLESS = (process.env.PLAYWRIGHT_HEADLESS || 'true') !== 'false';
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS || '3');
@@ -34,13 +35,81 @@ async function leaseOne(siteId?: string): Promise<LinkDoc | null> {
 async function processWithBrowser(browser: Browser, doc: LinkDoc): Promise<void> {
 	const pg = await browser.newPage();
 	try {
+		const t0 = Date.now();
 		const resp = await pg.goto(doc.url, { waitUntil: 'networkidle', timeout: 45000 });
+		const loadTimeMs = Date.now() - t0;
 		const statusCode = resp?.status() ?? null;
 		const contentType = resp?.headers()['content-type'] ?? null;
 		const title = await pg.title();
 		const html = await pg.content();
+		const metaDescription = await pg
+			.$eval(
+				'meta[name="description"], meta[property="og:description"]',
+				(el: Element) => (el as HTMLMetaElement).content || '',
+				{ strict: false }
+			)
+			.catch(() => '');
+		const canonicalUrl = await pg
+			.$eval(
+				'link[rel="canonical"]',
+				(el: Element) => (el as HTMLLinkElement).getAttribute('href') || '',
+				{ strict: false }
+			)
+			.catch(() => '');
+		const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
+
+		// Basic a11y + images checks (parity with worker)
+		const a11yAndImages = await pg.evaluate(() => {
+			function extFromUrl(u: string): string {
+				try {
+					const url = new URL(u, location.href);
+					const p = url.pathname.toLowerCase();
+					const m = p.match(/\.([a-z0-9]+)$/);
+					return m ? m[1] : '';
+				} catch {
+					return '';
+				}
+			}
+
+			const imgs = Array.from(document.images || []).map((img) => ({
+				src: (img as HTMLImageElement).currentSrc || (img as HTMLImageElement).src || '',
+				alt: (img as HTMLImageElement).alt || '',
+				w: (img as HTMLImageElement).naturalWidth || 0,
+				h: (img as HTMLImageElement).naturalHeight || 0
+			}));
+			const imagesMissingAlt = imgs.filter((i) => !i.alt || !i.alt.trim()).length;
+			const total = imgs.length;
+			const counts: Record<string, number> = { avif: 0, webp: 0, jpeg: 0, jpg: 0, png: 0, gif: 0, svg: 0, other: 0 };
+			const large: string[] = [];
+			imgs.forEach((i) => {
+				const ext = extFromUrl(i.src);
+				if (ext in counts) counts[ext]++;
+				else if (ext === 'jpe') counts.jpeg++;
+				else counts.other++;
+				const area = i.w * i.h;
+				if (i.w >= 1600 || i.h >= 1600 || area >= 2_000_000) {
+					if (large.length < 5) large.push(i.src);
+				}
+			});
+
+			const anchors = Array.from(document.querySelectorAll('a')) as HTMLAnchorElement[];
+			const anchorsWithoutText = anchors.filter(
+				(a) => !(a.textContent && a.textContent.trim()) && !(a.getAttribute('aria-label') || '').trim()
+			).length;
+			const h1Count = document.querySelectorAll('h1').length;
+
+			return {
+				a11y: { imagesMissingAlt, anchorsWithoutText, h1Count },
+				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large }
+			};
+		});
 
 		const excerpt = html.slice(0, 2000);
+		const normalizedText = (textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
+		const contentHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
+		const contentLength = html.length;
+		const wordCount = (textContent || '').split(/\s+/).filter(Boolean).length;
+		const titleLength = (title || '').length;
 
 		const now = new Date();
 		const pColl = await pages();
@@ -54,8 +123,17 @@ async function processWithBrowser(browser: Browser, doc: LinkDoc): Promise<void>
 					fetchedAt: now,
 					contentType,
 					title,
+					titleLength,
+					metaDescription: metaDescription || null,
+					loadTimeMs,
+					canonicalUrl: canonicalUrl || null,
 					content: html,
-					textExcerpt: excerpt
+					contentLength,
+					textExcerpt: excerpt,
+					textContent: textContent || null,
+					wordCount,
+					contentHash,
+					...a11yAndImages
 				} satisfies Partial<PageDoc>
 			},
 			{ upsert: true }

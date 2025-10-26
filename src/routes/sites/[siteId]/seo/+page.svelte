@@ -95,6 +95,7 @@
 	{#if data}
 		<div class="card bg-base-200">
 			<div class="card-body">
+				<p class="mb-2 text-sm opacity-70">Large image counts are computed at crawl-time by the worker using thresholds: width ≥ {data.thresholds.largeImageMinW}, height ≥ {data.thresholds.largeImageMinH}, or area ≥ {data.thresholds.largeImageMinArea}.</p>
 				<div class="flex flex-wrap items-end gap-4">
 					<div class="form-control w-48">
 						<label class="label" for="th"><span class="label-text">Slow threshold (ms)</span></label
