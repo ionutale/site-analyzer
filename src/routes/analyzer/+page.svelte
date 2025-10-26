@@ -39,21 +39,7 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new Set());
-
-	function statusBadgeClass(status: string): string {
-		switch (status) {
-			case 'done':
-				return 'badge-success';
-			case 'error':
-				return 'badge-error';
-			case 'fetching':
-				return 'badge-info';
-			case 'in_progress':
-				return 'badge-warning';
-			default:
-				return '';
-		}
-	}
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -479,7 +465,7 @@
 										<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 									</td>
 									<td>
-										<span class="badge {statusBadgeClass(it.status)}">{it.status}</span>
+										<StatusBadge status={it.status} />
 									</td>
 									<td>{it.attempts}</td>
 									<td>{new Date(it.updatedAt).toLocaleString()}</td>
