@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { chromium } from 'playwright';
 import { links, pages, type LinkDoc, type PageDoc } from '$lib/server/db';
+import { rateLimitCheck } from '$lib/server/rate-limit';
 
 const HEADLESS = (process.env.PLAYWRIGHT_HEADLESS || 'true') !== 'false';
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS || '3');
@@ -90,7 +91,15 @@ async function processOne(doc: LinkDoc): Promise<void> {
 	}
 }
 
-export const POST: RequestHandler = async ({ url, request }) => {
+export const POST: RequestHandler = async (event) => {
+const { url, request } = event;
+	const rl = rateLimitCheck(event, 'process-batch');
+	if (!rl.allowed) {
+		return json({ error: 'rate_limited' }, {
+			status: 429,
+			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+		});
+	}
 	if (process.env.NODE_ENV === 'production') return json({ error: 'Not allowed' }, { status: 403 });
 	const token = env.DEV_API_TOKEN;
 	if (token) {
@@ -98,7 +107,7 @@ export const POST: RequestHandler = async ({ url, request }) => {
 		if (reqToken !== token) return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const siteId = url.searchParams.get('siteId') || undefined;
+		const siteId = url.searchParams.get('siteId') || undefined;
 	const count = Math.max(1, Math.min(5, Number(url.searchParams.get('count') || '3')));
 
 	const processed: string[] = [];

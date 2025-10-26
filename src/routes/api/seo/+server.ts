@@ -98,6 +98,21 @@ export const GET: RequestHandler = async ({ url }) => {
 		.limit(20)
 		.toArray();
 
+	// duplicate content by contentHash (based on normalized textContent)
+	const dupContentAgg = await coll
+		.aggregate<{
+			_id: string;
+			count: number;
+			urls: string[];
+		}>([
+			{ $match: { siteId, contentHash: { $exists: true, $nin: [null, ''] } } },
+			{ $group: { _id: '$contentHash', count: { $sum: 1 }, urls: { $addToSet: '$url' } } },
+			{ $match: { count: { $gt: 1 } } },
+			{ $sort: { count: -1 } },
+			{ $limit: 20 }
+		])
+		.toArray();
+
 	// duplicate titles
 	const dupTitleAgg = await coll
 		.aggregate<{
@@ -157,7 +172,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			titleTooShort,
 			titleTooLong,
 			duplicateTitles: dupTitleAgg.reduce((acc, d) => acc + (d.count - 1), 0),
-			duplicateMeta: dupMetaAgg.reduce((acc, d) => acc + (d.count - 1), 0)
+			duplicateMeta: dupMetaAgg.reduce((acc, d) => acc + (d.count - 1), 0),
+			duplicateContent: dupContentAgg.reduce((acc, d) => acc + (d.count - 1), 0)
 		},
 		samples: {
 			slowPages: slowPages.map((d) => ({ ...d, _id: String(d._id) })),
@@ -178,7 +194,8 @@ export const GET: RequestHandler = async ({ url }) => {
 				count: d.count,
 				urls: d.urls.slice(0, 5),
 				metaDescription: d.metaDescription
-			}))
+			})),
+			duplicateContent: dupContentAgg.map((d) => ({ key: d._id, count: d.count, urls: d.urls.slice(0, 5) }))
 		}
 	});
 };

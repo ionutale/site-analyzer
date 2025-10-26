@@ -25,6 +25,7 @@
 		}>;
 		duplicateTitles: Array<{ key: string; count: number; urls: string[]; title: string }>;
 		duplicateMeta: Array<{ key: string; count: number; urls: string[]; metaDescription: string }>;
+		duplicateContent: Array<{ key: string; count: number; urls: string[] }>;
 	};
 	type SeoResponse = {
 		siteId: string;
@@ -40,6 +41,7 @@
 			titleTooLong: number;
 			duplicateTitles: number;
 			duplicateMeta: number;
+			duplicateContent: number;
 		};
 		samples: SeoSamples;
 	};
@@ -119,6 +121,10 @@
 					<li class="stat rounded-box bg-base-100">
 						<div class="stat-title">Duplicate meta</div>
 						<div class="stat-value text-lg">{data.issues.duplicateMeta}</div>
+					</li>
+					<li class="stat rounded-box bg-base-100">
+						<div class="stat-title">Duplicate content</div>
+						<div class="stat-value text-lg">{data.issues.duplicateContent}</div>
 					</li>
 				</ul>
 			</div>
@@ -317,6 +323,36 @@
 									</tr>
 								{/each}
 								{#if data.samples.duplicateMeta.length === 0}
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
+								{/if}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body">
+					<h2 class="card-title">Duplicate content</h2>
+					<div class="overflow-x-auto">
+						<table class="table">
+							<thead><tr><th>Hash</th><th>Count</th><th>Sample URLs</th></tr></thead>
+							<tbody>
+								{#each data.samples.duplicateContent as it (it.key)}
+									<tr>
+										<td class="max-w-[200px] truncate">{it.key}</td>
+										<td>{it.count}</td>
+										<td>
+											<ul class="ml-5 list-disc">
+												{#each it.urls as u (u)}
+													<li class="max-w-[320px] truncate">
+														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
+													</li>
+												{/each}
+											</ul>
+										</td>
+									</tr>
+								{/each}
+								{#if data.samples.duplicateContent.length === 0}
 									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
 								{/if}
 							</tbody>

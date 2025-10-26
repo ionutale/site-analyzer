@@ -1,11 +1,20 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { links } from '$lib/server/db';
+import { rateLimitCheck } from '$lib/server/rate-limit';
 
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS || '3');
 const LEASE_TIMEOUT_MS = Number(process.env.LEASE_TIMEOUT_MS || '900000');
 
-export const POST: RequestHandler = async ({ url }) => {
+export const POST: RequestHandler = async (event) => {
+	const { url } = event;
+	const rl = rateLimitCheck(event, 'resume');
+	if (!rl.allowed) {
+		return json({ error: 'rate_limited' }, {
+			status: 429,
+			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+		});
+	}
 	const siteId = url.searchParams.get('siteId');
 	if (!siteId) return json({ error: 'Missing siteId' }, { status: 400 });
 	const mode = (url.searchParams.get('mode') || 'all').toLowerCase();

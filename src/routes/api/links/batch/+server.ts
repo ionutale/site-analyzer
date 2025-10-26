@@ -2,8 +2,17 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { links } from '$lib/server/db';
 import { ObjectId } from 'mongodb';
+import { rateLimitCheck } from '$lib/server/rate-limit';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const rl = rateLimitCheck(event, 'links-batch');
+	if (!rl.allowed) {
+		return json({ error: 'rate_limited' }, {
+			status: 429,
+			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+		});
+	}
+	const { request } = event;
 	const body = await request.json().catch(() => null);
 	if (!body) return json({ error: 'Invalid JSON' }, { status: 400 });
 	const { siteId, ids, action } = body as {

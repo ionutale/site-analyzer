@@ -44,7 +44,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 		const statusCode = resp?.status() ?? null;
 		const contentType = resp?.headers()['content-type'] ?? null;
 		const title = await pg.title();
-		const html = await pg.content();
+	const html = await pg.content();
 		const metaDescription = await pg
 			.$eval(
 				'meta[name="description"], meta[property="og:description"]',
@@ -61,8 +61,12 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 			.catch(() => '');
 		const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
 
-		const excerpt = html.slice(0, 2000);
-		const hash = crypto.createHash('sha256').update(html).digest('hex');
+				const excerpt = html.slice(0, 2000);
+				const normalizedText = (textContent || '')
+					.toLowerCase()
+					.replace(/\s+/g, ' ')
+					.trim();
+				const hash = crypto.createHash('sha256').update(normalizedText).digest('hex');
 		const contentLength = html.length;
 		const wordCount = (textContent || '').split(/\s+/).filter(Boolean).length;
 		const titleLength = (title || '').length;

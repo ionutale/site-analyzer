@@ -279,17 +279,17 @@ Acceptance criteria
 - Actions trigger a visible toast that auto-hides; multiple toasts queue without overlap
 - No TypeScript errors; Svelte lint clean
 
-## Server-side rate limiting (planned)
+## Server-side rate limiting (completed)
 
 Design
 
 - Lightweight in-memory token bucket keyed by client IP (or `x-dev-token` when present)
 - Global config via `.env`: `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_TOKENS`, optional `RATE_LIMIT_BURST`
-- Implement in `hooks.server.ts` or a small wrapper used by dev endpoints; bypass when `dev` is true unless `DEV_API_TOKEN` is set
+- Implement via a small wrapper used by dev endpoints (`$lib/server/rate-limit.ts`); bypass when env config is absent
 
-Scope (initial)
+Scope
 
-- Protect dev endpoints: `POST /api/process-batch`, `POST /api/reset-site`, `POST /api/links/batch`, and optionally `POST /api/resume`
+- Protect dev endpoints: `POST /api/process-batch`, `POST /api/reset-site`, `POST /api/links/batch`, and `POST /api/resume`
 
 Acceptance criteria
 
@@ -297,13 +297,13 @@ Acceptance criteria
 - Limits reset after window; per-IP accounting works locally
 - Configurable and disabled when variables are absent
 
-## Duplicate content detection (planned)
+## Duplicate content detection (completed)
 
 Phase 1: Exact duplicates
 
-- Add `contentHash` (e.g., sha256 of normalized `textContent`) to `pages`
+- `contentHash` (sha256 of normalized `textContent`) stored in `pages`
 - Index `{ siteId: 1, contentHash: 1 }`
-- SEO API: add summary of duplicate groups by `contentHash` with sample URLs
+- SEO API: summary of duplicate groups by `contentHash` with sample URLs
 
 Phase 2: Near-duplicates (optional)
 
@@ -313,7 +313,7 @@ Phase 2: Near-duplicates (optional)
 
 Acceptance criteria
 
-- Exact duplicates detected correctly on seeded data (>=2 pages with identical `textContent`)
+- Exact duplicates detected correctly on seeded data (>=2 pages with identical normalized `textContent`)
 - API returns groups with counts and example URLs; UI lists them
 - Near-duplicate path is feature-flagged and can be postponed
 
@@ -323,6 +323,8 @@ Acceptance criteria
   - **Completed**: Homepage dashboard with site statistics and recent sites list
   - **Completed**: Toast notification system with success/error/info helpers
   - **Completed**: Replaced all inline alerts with toasts for ingest, batch actions, reset, and resume
+  - **Completed**: Server-side rate limiting for dev endpoints via `$lib/server/rate-limit.ts`
+  - **Completed**: Duplicate content detection (contentHash), SEO API/UI now show duplicate content groups
   - Added Resume endpoint to backend and wired Resume actions in Analyzer and per-site pages
   - Analyzer gained site selector, local persistence, and query param restore
   - Development plan expanded with dashboard/toasts/rate limiting/duplicate content details
