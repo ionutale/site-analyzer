@@ -195,7 +195,11 @@ export const GET: RequestHandler = async ({ url }) => {
 				urls: d.urls.slice(0, 5),
 				metaDescription: d.metaDescription
 			})),
-			duplicateContent: dupContentAgg.map((d) => ({ key: d._id, count: d.count, urls: d.urls.slice(0, 5) }))
+			duplicateContent: dupContentAgg.map((d) => ({
+				key: d._id,
+				count: d.count,
+				urls: d.urls.slice(0, 5)
+			}))
 		}
 	});
 };

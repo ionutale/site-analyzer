@@ -7,10 +7,13 @@ import { rateLimitCheck } from '$lib/server/rate-limit';
 export const POST: RequestHandler = async (event) => {
 	const rl = rateLimitCheck(event, 'links-batch');
 	if (!rl.allowed) {
-		return json({ error: 'rate_limited' }, {
-			status: 429,
-			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
-		});
+		return json(
+			{ error: 'rate_limited' },
+			{
+				status: 429,
+				headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+			}
+		);
 	}
 	const { request } = event;
 	const body = await request.json().catch(() => null);

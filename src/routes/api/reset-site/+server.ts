@@ -8,10 +8,13 @@ export const POST: RequestHandler = async (event) => {
 	const { url, request } = event;
 	const rl = rateLimitCheck(event, 'reset-site');
 	if (!rl.allowed) {
-		return json({ error: 'rate_limited' }, {
-			status: 429,
-			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
-		});
+		return json(
+			{ error: 'rate_limited' },
+			{
+				status: 429,
+				headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+			}
+		);
 	}
 	if (process.env.NODE_ENV === 'production') return json({ error: 'Not allowed' }, { status: 403 });
 	const token = env.DEV_API_TOKEN;

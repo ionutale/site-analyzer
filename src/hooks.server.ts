@@ -4,5 +4,5 @@ import type { Handle } from '@sveltejs/kit';
 // This file is kept to allow future global middleware (auth, rate limit, etc.).
 
 export const handle: Handle = async ({ event, resolve }) => {
-  return resolve(event);
+	return resolve(event);
 };

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
-	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
 	import StatusSummary from '$lib/components/molecules/StatusSummary.svelte';
 	import LinksTable from '$lib/components/molecules/LinksTable.svelte';
+	import PaginationControls from '$lib/components/molecules/PaginationControls.svelte';
 
 	let siteUrl = $state('');
 	let siteId = $state<string | null>(null);
@@ -41,7 +41,6 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new Set());
-	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -400,9 +399,26 @@
 					</button>
 				</div>
 
-				<LinksTable {items} selected={selected} on:selectionChange={(e) => (selected = e.detail)} />
+				<LinksTable {items} {selected} on:selectionChange={(e) => (selected = e.detail)} />
 
-				<div class="flex items-center justify-between gap-2">
+				<PaginationControls
+					{page}
+					max={Math.max(1, Math.ceil(total / limit))}
+					{total}
+					onPrev={() => {
+						if (page > 1) {
+							page -= 1;
+							fetchLinks();
+						}
+					}}
+					onNext={() => {
+						const max = Math.max(1, Math.ceil(total / limit));
+						if (page < max) {
+							page += 1;
+							fetchLinks();
+						}
+					}}
+				>
 					<div class="flex items-center gap-2">
 						<button
 							class="btn btn-outline"
@@ -415,35 +431,9 @@
 							onclick={() => batchAction('purge')}>Purge selected</button
 						>
 						<span class="text-sm opacity-70">{selected.size} selected</span>
-					</div>
-					<button
-						class="btn"
-						onclick={() => {
-							if (page > 1) {
-								page -= 1;
-								fetchLinks();
-							}
-						}}
-						disabled={page <= 1}>Prev</button
-					>
-					<div class="text-sm">
-						Page {page} of {Math.max(1, Math.ceil(total / limit))} • {total} total
-					</div>
-					<div class="flex items-center gap-2">
 						<button class="btn btn-error" onclick={resetSite} title="Dev only">Reset site</button>
-						<button
-							class="btn"
-							onclick={() => {
-								const max = Math.max(1, Math.ceil(total / limit));
-								if (page < max) {
-									page += 1;
-									fetchLinks();
-								}
-							}}
-							disabled={page >= Math.max(1, Math.ceil(total / limit))}>Next</button
-						>
 					</div>
-				</div>
+				</PaginationControls>
 			</div>
 		</div>
 	{/if}

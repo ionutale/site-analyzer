@@ -92,13 +92,16 @@ async function processOne(doc: LinkDoc): Promise<void> {
 }
 
 export const POST: RequestHandler = async (event) => {
-const { url, request } = event;
+	const { url, request } = event;
 	const rl = rateLimitCheck(event, 'process-batch');
 	if (!rl.allowed) {
-		return json({ error: 'rate_limited' }, {
-			status: 429,
-			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
-		});
+		return json(
+			{ error: 'rate_limited' },
+			{
+				status: 429,
+				headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+			}
+		);
 	}
 	if (process.env.NODE_ENV === 'production') return json({ error: 'Not allowed' }, { status: 403 });
 	const token = env.DEV_API_TOKEN;
@@ -107,7 +110,7 @@ const { url, request } = event;
 		if (reqToken !== token) return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-		const siteId = url.searchParams.get('siteId') || undefined;
+	const siteId = url.searchParams.get('siteId') || undefined;
 	const count = Math.max(1, Math.min(5, Number(url.searchParams.get('count') || '3')));
 
 	const processed: string[] = [];

@@ -85,16 +85,14 @@ async function ensureIndexes(db: Db): Promise<void> {
 			{ key: { siteId: 1, status: 1 } }
 		]);
 
-	await db
-		.collection<PageDoc>('pages')
-		.createIndexes([
-			{ key: { siteId: 1, url: 1 }, unique: true },
-			{ key: { fetchedAt: -1 } },
-			{
-				key: { siteId: 1, contentHash: 1 },
-				name: 'by_site_contentHash',
-				partialFilterExpression: { contentHash: { $exists: true } }
-			}
-		]);
+	await db.collection<PageDoc>('pages').createIndexes([
+		{ key: { siteId: 1, url: 1 }, unique: true },
+		{ key: { fetchedAt: -1 } },
+		{
+			key: { siteId: 1, contentHash: 1 },
+			name: 'by_site_contentHash',
+			partialFilterExpression: { contentHash: { $exists: true } }
+		}
+	]);
 	indexesEnsured = true;
 }

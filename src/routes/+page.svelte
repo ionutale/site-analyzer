@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import SitesTable from '$lib/components/molecules/SitesTable.svelte';
 
 	type SiteInfo = {
 		siteId: string;
@@ -15,10 +16,6 @@
 	let sites = $state<SiteInfo[]>([]);
 	let loading = $state(true);
 	let errorMsg = $state<string | null>(null);
-
-	function analyzerLink(siteId: string) {
-		return `${resolve('/analyzer')}?siteId=${encodeURIComponent(siteId)}`;
-	}
 
 	let totals = $state({
 		sites: 0,
@@ -92,46 +89,14 @@
 					<h2 class="card-title">Recent sites</h2>
 					<a class="btn btn-sm" href={resolve('/sites')}>All sites</a>
 				</div>
-				<div class="overflow-x-auto">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>Site</th>
-								<th>Done</th>
-								<th>Error</th>
-								<th>Total</th>
-								<th>Updated</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each sites
-								.slice()
-								.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-								.slice(0, 10) as s (s.siteId)}
-								<tr>
-									<td><code>{s.siteId}</code></td>
-									<td>{s.done}</td>
-									<td>{s.error}</td>
-									<td>{s.total}</td>
-									<td>{new Date(s.lastUpdated).toLocaleString()}</td>
-									<td>
-										<!-- eslint-disable svelte/no-navigation-without-resolve -->
-										<div class="btn-group">
-											<a class="btn btn-sm" href={analyzerLink(s.siteId)}>Analyzer</a>
-											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}`)}>Site</a>
-											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}/seo`)}>SEO</a>
-										</div>
-										<!-- eslint-enable svelte/no-navigation-without-resolve -->
-									</td>
-								</tr>
-							{/each}
-							{#if sites.length === 0}
-								<tr><td colspan="6" class="text-center opacity-70">No sites yet</td></tr>
-							{/if}
-						</tbody>
-					</table>
-				</div>
+				<SitesTable
+					items={sites
+						.slice()
+						.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+						.slice(0, 10)}
+					showActions={true}
+					showDetailed={false}
+				/>
 			</div>
 		</div>
 	{/if}

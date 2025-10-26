@@ -24,7 +24,12 @@ export default defineConfig(
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			// We intentionally use native Set and URLSearchParams rather than SvelteSet/SvelteURLSearchParams
+			// to avoid SSR/runtime issues observed earlier; disable this Svelte 5 preference rule.
+			'svelte/prefer-svelte-reactivity': 'off',
+			// Querystring links and cross-page hrefs are constructed directly; resolving is not required here.
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	},
 	{

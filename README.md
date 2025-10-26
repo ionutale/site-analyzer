@@ -166,20 +166,20 @@ Copy `.env.example` to `.env` and adjust as needed. Keys used by the app/worker:
 
 ## Running the app and worker
 
-1) Install deps and start the dev server:
+1. Install deps and start the dev server:
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-2) In a second terminal, run the Playwright worker (processes leased links):
+2. In a second terminal, run the Playwright worker (processes leased links):
 
 ```sh
 pnpm worker
 ```
 
-3) In the UI, open `/analyzer`, enter a site URL, and ingest. Use Resume/Batch actions as needed.
+3. In the UI, open `/analyzer`, enter a site URL, and ingest. Use Resume/Batch actions as needed.
 
 Notes:
 
@@ -234,4 +234,3 @@ Images will be written under `static/screenshots` (or your configured directory)
 
 - Unit: `pnpm test:unit`
 - E2E: `pnpm test:e2e`
-

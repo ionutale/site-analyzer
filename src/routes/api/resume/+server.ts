@@ -10,10 +10,13 @@ export const POST: RequestHandler = async (event) => {
 	const { url } = event;
 	const rl = rateLimitCheck(event, 'resume');
 	if (!rl.allowed) {
-		return json({ error: 'rate_limited' }, {
-			status: 429,
-			headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
-		});
+		return json(
+			{ error: 'rate_limited' },
+			{
+				status: 429,
+				headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) }
+			}
+		);
 	}
 	const siteId = url.searchParams.get('siteId');
 	if (!siteId) return json({ error: 'Missing siteId' }, { status: 400 });

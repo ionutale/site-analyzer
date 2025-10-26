@@ -1,103 +1,115 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import StatusBadge from '$lib/components/atoms/StatusBadge.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import StatusBadge from '$lib/components/atoms/StatusBadge.svelte';
 
-  export type LinkItem = {
-    _id: string;
-    url: string;
-    status: string;
-    attempts: number;
-    updatedAt: string;
-    pageId?: string | null;
-  };
+	export type LinkItem = {
+		_id: string;
+		url: string;
+		status: string;
+		attempts: number;
+		updatedAt: string;
+		pageId?: string | null;
+	};
 
-  const dispatch = createEventDispatcher<{ selectionChange: Set<string> }>();
+		const dispatch = createEventDispatcher<{ selectionChange: Set<string> }>();
 
-  let { items, selected = new Set<string>(), showSelection = true } = $props<{
-    items: LinkItem[];
-    selected?: Set<string>;
-    showSelection?: boolean;
-  }>();
+	let {
+		items,
+		selected = new Set<string>(),
+		showSelection = true
+	} = $props<{
+		items: LinkItem[];
+		selected?: Set<string>;
+		showSelection?: boolean;
+	}>();
 
-  function setSelected(next: Set<string>) {
-    selected = next;
-    // Notify parent; pass a new Set to ensure immutability
-    dispatch('selectionChange', new Set<string>([...(selected as Set<string>)]));
-  }
+		function setsEqual(a: Set<string>, b: Set<string>): boolean {
+			if (a.size !== b.size) return false;
+			for (const v of a) if (!b.has(v)) return false;
+			return true;
+		}
 
-  function toggleAll(checked: boolean) {
-  setSelected(checked ? new Set(items.map((i: LinkItem) => i._id)) : new Set());
-  }
+		function setSelected(next: Set<string>) {
+			// Controlled component: don’t set local state, only notify parent if changed
+			if (setsEqual(next, selected as Set<string>)) return;
+			dispatch('selectionChange', next);
+		}
 
-  function toggleOne(id: string, checked: boolean) {
-    const next = new Set<string>([...(selected as Set<string>)]);
-    if (checked) next.add(id);
-    else next.delete(id);
-    setSelected(next);
-  }
+	function toggleAll(checked: boolean) {
+		setSelected(checked ? new Set(items.map((i: LinkItem) => i._id)) : new Set());
+	}
 
-  $effect(() => {
-    // prune selection when items change
-  const visibleIds = new Set(items.map((i: LinkItem) => i._id));
-  setSelected(new Set<string>([...selected].filter((id) => visibleIds.has(id))));
-  });
+	function toggleOne(id: string, checked: boolean) {
+		const next = new Set<string>([...(selected as Set<string>)]);
+		if (checked) next.add(id);
+		else next.delete(id);
+		setSelected(next);
+	}
+
+		$effect(() => {
+			// prune selection when items change; notify only if it actually changes
+			const visibleIds = new Set(items.map((i: LinkItem) => i._id));
+			const pruned = new Set<string>([...selected].filter((id) => visibleIds.has(id)));
+			if (!setsEqual(pruned, selected as Set<string>)) {
+				dispatch('selectionChange', pruned);
+			}
+		});
 </script>
 
 <div class="overflow-x-auto">
-  <table class="table">
-    <thead>
-      <tr>
-        {#if showSelection}
-          <th>
-            <input
-              type="checkbox"
-              checked={items.length > 0 && selected.size === items.length}
-              indeterminate={selected.size > 0 && selected.size < items.length}
-              onchange={(e) => toggleAll((e.target as HTMLInputElement).checked)}
-            />
-          </th>
-        {/if}
-        <th>URL</th>
-        <th>Status</th>
-        <th>Attempts</th>
-        <th>Updated</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each items as it (it._id)}
-        <tr>
-          {#if showSelection}
-            <td>
-              <input
-                type="checkbox"
-                checked={selected.has(it._id)}
-                onchange={(e) => toggleOne(it._id, (e.target as HTMLInputElement).checked)}
-              />
-            </td>
-          {/if}
-          <td class="max-w-[420px] truncate">
-            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-            <a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
-          </td>
-          <td>
-            <StatusBadge status={it.status} />
-          </td>
-          <td>{it.attempts}</td>
-          <td>{new Date(it.updatedAt).toLocaleString()}</td>
-          <td>
-            {#if it.pageId}
-              <a class="btn btn-sm" href={`/analyzer/page/${it.pageId}`}>View</a>
-            {:else}
-              <span class="text-sm opacity-50">n/a</span>
-            {/if}
-          </td>
-        </tr>
-      {/each}
-      {#if items.length === 0}
-        <tr><td colspan="5" class="text-center opacity-70">No items</td></tr>
-      {/if}
-    </tbody>
-  </table>
-  
+	<table class="table">
+		<thead>
+			<tr>
+				{#if showSelection}
+					<th>
+						<input
+							type="checkbox"
+							checked={items.length > 0 && selected.size === items.length}
+							indeterminate={selected.size > 0 && selected.size < items.length}
+							onchange={(e) => toggleAll((e.target as HTMLInputElement).checked)}
+						/>
+					</th>
+				{/if}
+				<th>URL</th>
+				<th>Status</th>
+				<th>Attempts</th>
+				<th>Updated</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each items as it (it._id)}
+				<tr>
+					{#if showSelection}
+						<td>
+							<input
+								type="checkbox"
+								checked={selected.has(it._id)}
+								onchange={(e) => toggleOne(it._id, (e.target as HTMLInputElement).checked)}
+							/>
+						</td>
+					{/if}
+					<td class="max-w-[420px] truncate">
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+						<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+					</td>
+					<td>
+						<StatusBadge status={it.status} />
+					</td>
+					<td>{it.attempts}</td>
+					<td>{new Date(it.updatedAt).toLocaleString()}</td>
+					<td>
+						{#if it.pageId}
+							<a class="btn btn-sm" href={`/analyzer/page/${it.pageId}`}>View</a>
+						{:else}
+							<span class="text-sm opacity-50">n/a</span>
+						{/if}
+					</td>
+				</tr>
+			{/each}
+			{#if items.length === 0}
+				<tr><td colspan="5" class="text-center opacity-70">No items</td></tr>
+			{/if}
+		</tbody>
+	</table>
 </div>
