@@ -26,5 +26,11 @@ add a handle hook to enforce redirects on SSR too.
 Add a small loading/skeleton state while auth initializes to avoid any flash on protected pages.
 add a compact progress bar next to StatusSummary to reflect auto-refresh progress.
 
+add a dashboard page showing high-level cards with total sites, total pages analyzed, pages with errors, average load time, and recent sites with quick links to their Analyzer and SEO pages.
+move the current homepage to dashboard and create a new landing page at `/` with app description and get started link.
+the new landing page should be accessible only without login, but all other pages should require authentication.
+split the landing page and dashboard into separate routes
+
+
 Want a “max processed” input in the UI for drains? I can add a compact field next to the dropdown.
 I can also add a small progress toast that updates every batch while draining.

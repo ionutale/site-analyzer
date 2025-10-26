@@ -22,6 +22,9 @@
 	let statusError = $state<string | null>(null);
 	let lastStatusAt = $state<Date | null>(null);
 	let timer: ReturnType<typeof setInterval> | null = null;
+    let progTimer: ReturnType<typeof setInterval> | null = null;
+    let refreshIntervalMs = 5000;
+    let progress = $state(0);
 
 	// links table state
 	type LinkItem = {
@@ -145,6 +148,7 @@
 
 	function startPolling() {
 		if (timer) clearInterval(timer);
+		if (progTimer) clearInterval(progTimer);
 		fetchStatus();
 		fetchLinks();
 		fetchInProgressLinks();
@@ -152,7 +156,18 @@
 			await fetchStatus();
 			await fetchLinks();
 			await fetchInProgressLinks();
-		}, 5000);
+		}, refreshIntervalMs);
+        // progress animation towards next refresh
+        progress = 0;
+        progTimer = setInterval(() => {
+            if (lastStatusAt) {
+                const elapsed = Date.now() - lastStatusAt.getTime();
+                const pct = Math.max(0, Math.min(100, ((elapsed % refreshIntervalMs) / refreshIntervalMs) * 100));
+                progress = pct;
+            } else {
+                progress = 0;
+            }
+        }, 100);
 	}
 
 	async function fetchInProgressLinks() {
@@ -302,7 +317,10 @@
 		}
 	}
 
-	onMount(() => () => timer && clearInterval(timer));
+	onMount(() => () => {
+		if (timer) clearInterval(timer);
+		if (progTimer) clearInterval(progTimer);
+	});
 
 	async function loadSites() {
 		try {
@@ -453,8 +471,12 @@
 							<span>Refreshing…</span>
 						{:else if lastStatusAt}
 						<span>Last updated: {lastStatusAt.toLocaleTimeString()}</span>
+						<span class="ml-2"></span>
 						{/if}
 					{/if}
+                    <div class="ml-auto w-40">
+                        <progress class="progress progress-info h-1" value={progress} max="100"></progress>
+                    </div>
 				</div>
 			</div>
 		</div>

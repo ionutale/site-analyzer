@@ -15,6 +15,7 @@
 
 	type ThemePref = 'system' | 'light' | 'dark';
 	let themePref = $state<ThemePref>('system');
+    let authReady = $state(false);
 
 	function applyTheme(pref: ThemePref) {
 		if (pref === 'light') {
@@ -61,6 +62,11 @@
 
 		// start auth listener
 		user.start();
+        // mark auth as resolved on first emission
+        const unsub = user.subscribe(() => {
+            authReady = true;
+        });
+        return () => unsub();
 	});
 
 	// Client-side route guard: require auth for all non-public routes
@@ -71,6 +77,11 @@
 		const u = $user;
 		// Only run in the browser
 		if (typeof window === 'undefined') return;
+		// Keep a lightweight cookie for SSR guard awareness (dev-only convenience)
+		try {
+			if (u) document.cookie = 'sa_auth=1; Path=/; SameSite=Lax';
+			else document.cookie = 'sa_auth=; Max-Age=0; Path=/; SameSite=Lax';
+		} catch {}
 		if (!PUBLIC_PATHS.has(pathname) && !u) {
 			const redirect = encodeURIComponent(pathname + (search || ''));
 			// Build href using a literal path for resolve, then append query string
@@ -131,7 +142,14 @@
 			</div>
 		</div>
 		<main class="container mx-auto flex-1 px-4 py-6">
-			{@render children?.()}
+			{#if !authReady && !$page.url.pathname.match(/^\/$|^\/login$/)}
+				<div class="flex h-40 items-center justify-center">
+					<span class="loading loading-spinner loading-md"></span>
+					<span class="ml-2 opacity-70">Loading…</span>
+				</div>
+			{:else}
+				{@render children?.()}
+			{/if}
 		</main>
 		<footer class="footer-center footer bg-base-200 p-4 text-base-content">
 			<aside>
