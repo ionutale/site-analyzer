@@ -34,7 +34,7 @@
 			multipleH1: SeoSampleIdUrl[];
 		};
 		images: {
-			largeImages: Array<{ pageUrl: string; imageUrl: string }>;
+			largeImages: Array<{ pageId: string; pageUrl: string; imageUrl: string }>;
 		};
 	};
 	type SeoResponse = {
@@ -261,9 +261,10 @@
 					<h3 class="mt-4 font-semibold">Sample large images</h3>
 					<ul class="ml-5 list-disc">
 						{#each data.samples.images.largeImages as it (it.pageUrl + it.imageUrl)}
-							<li class="truncate">
+							<li class="truncate flex items-center gap-2">
 								Page: <a class="link" href={it.pageUrl} target="_blank" rel="noopener">{it.pageUrl}</a>
 								— Image: <a class="link" href={it.imageUrl} target="_blank" rel="noopener">{it.imageUrl}</a>
+								<a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it.pageId}`)}>View</a>
 							</li>
 						{/each}
 						{#if data.samples.images.largeImages.length === 0}
@@ -278,7 +279,7 @@
 					<h2 class="card-title">Top slow pages</h2>
 					<div class="overflow-x-auto">
 						<table class="table">
-							<thead><tr><th>URL</th><th>Load (ms)</th></tr></thead>
+							<thead><tr><th>URL</th><th>Load (ms)</th><th></th></tr></thead>
 							<tbody>
 								{#each data.samples.slowPages as it (it._id)}
 									<tr>
@@ -286,10 +287,11 @@
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 										<td>{it.loadTimeMs}</td>
+										<td class="text-right"><a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it._id}`)}>View</a></td>
 									</tr>
 								{/each}
 								{#if data.samples.slowPages.length === 0}
-									<tr><td colspan="2" class="text-center opacity-70">No slow pages</td></tr>
+									<tr><td colspan="3" class="text-center opacity-70">No slow pages</td></tr>
 								{/if}
 							</tbody>
 						</table>
@@ -301,8 +303,9 @@
 					<h2 class="card-title">Missing title</h2>
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingTitlePages as it (it._id)}
-							<li class="truncate">
+							<li class="truncate flex items-center gap-2">
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it._id}`)}>View</a>
 							</li>
 						{/each}
 						{#if data.samples.missingTitlePages.length === 0}
@@ -316,8 +319,9 @@
 					<h2 class="card-title">Missing meta description</h2>
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingMetaPages as it (it._id)}
-							<li class="truncate">
+							<li class="truncate flex items-center gap-2">
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it._id}`)}>View</a>
 							</li>
 						{/each}
 						{#if data.samples.missingMetaPages.length === 0}
@@ -339,10 +343,11 @@
 											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 										<td>{it.statusCode ?? 'n/a'}</td>
+										<td class="text-right"><a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it._id}`)}>View</a></td>
 									</tr>
 								{/each}
 								{#if data.samples.non200Pages.length === 0}
-									<tr><td colspan="2" class="text-center opacity-70">None</td></tr>
+									<tr><td colspan="3" class="text-center opacity-70">None</td></tr>
 								{/if}
 							</tbody>
 						</table>
@@ -354,8 +359,9 @@
 					<h2 class="card-title">Missing canonical URL</h2>
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingCanonicalPages as it (it._id)}
-							<li class="truncate">
+							<li class="truncate flex items-center gap-2">
 								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
+								<a class="btn btn-ghost btn-xs" href={resolve(`/analyzer/page/${it._id}`)}>View</a>
 							</li>
 						{/each}
 						{#if data.samples.missingCanonicalPages.length === 0}

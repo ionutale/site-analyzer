@@ -1,15 +1,41 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { toasts } from '$lib/stores/toast';
 	let { data } = $props();
 	const page = data.page;
+
+	let busy = $state(false);
+	async function reprocess() {
+		if (!page) return;
+		try {
+			busy = true;
+			const res = await fetch('/api/reprocess', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId: page.siteId, url: page.url })
+			});
+			if (!res.ok) throw new Error('Failed to queue reprocess');
+			toasts.success('Reprocess queued. The worker will pick this up shortly.');
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Reprocess failed: ${msg}`);
+		} finally {
+			busy = false;
+		}
+	}
 </script>
 
 <section class="mx-auto max-w-4xl space-y-4 p-4">
 	<a href={resolve('/analyzer')} class="text-blue-600 hover:underline">← Back to Analyzer</a>
 
 	{#if page}
-		<h1 class="text-2xl font-semibold">{page.title || page.url}</h1>
-		<div class="text-sm opacity-70">{page.url}</div>
+		<div class="flex items-start justify-between gap-4">
+			<div>
+				<h1 class="text-2xl font-semibold">{page.title || page.url}</h1>
+				<div class="text-sm opacity-70">{page.url}</div>
+			</div>
+			<button class="btn btn-primary btn-sm" onclick={reprocess} disabled={busy}>Reprocess</button>
+		</div>
 
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 			<div class="rounded bg-base-200 p-2">Status: <strong>{page.statusCode ?? 'n/a'}</strong></div>

@@ -317,9 +317,10 @@ export const GET: RequestHandler = async ({ url }) => {
 				multipleH1: pagesMultiH1Samples.map((d) => ({ ...d, _id: String(d._id) }))
 			},
 			images: {
-				largeImages: sampleLargeImagesDocs.flatMap((d: { url: string; imagesMeta?: { sampleLarge?: string[] } }) =>
-					(d.imagesMeta?.sampleLarge?.slice(0, 5)?.map((u) => ({ pageUrl: d.url, imageUrl: u })) ?? [])
-				)
+				largeImages: sampleLargeImagesDocs.flatMap(
+					(d: { _id: unknown; url: string; imagesMeta?: { sampleLarge?: string[] } }) =>
+						(d.imagesMeta?.sampleLarge?.slice(0, 5)?.map((u) => ({ pageId: String(d._id), pageUrl: d.url, imageUrl: u })) ?? [])
+					)
 			},
 			duplicateTitles: dupTitleAgg.map((d) => ({
 				key: d._id,
