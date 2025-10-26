@@ -109,23 +109,31 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	const siteId = url.searchParams.get('siteId') || undefined;
-	const count = Math.max(1, Math.min(5, Number(url.searchParams.get('count') || '3')));
+	const count = Math.max(1, Math.min(10, Number(url.searchParams.get('count') || '3')));
+	const drain = (url.searchParams.get('drain') || 'false') === 'true';
+	const maxTotal = Math.max(0, Number(url.searchParams.get('max') || '0')); // 0 = no cap
 
-	// Lease up to "count" jobs first, then process concurrently using a single browser
-	const jobs: LinkDoc[] = [];
-	for (let i = 0; i < count; i++) {
-		const job = await leaseOne(siteId);
-		if (!job) break;
-		jobs.push(job);
-	}
-	if (jobs.length === 0) return json({ ok: true, processedCount: 0 });
-
+	let processedTotal = 0;
 	const browser = await chromium.launch({ headless: HEADLESS });
 	try {
-		await Promise.all(jobs.map((j) => processWithBrowser(browser, j)));
+		// When drain=false, run a single batch; when drain=true, loop until queue is empty or maxTotal reached
+		do {
+			const jobs: LinkDoc[] = [];
+			for (let i = 0; i < count; i++) {
+				const job = await leaseOne(siteId);
+				if (!job) break;
+				jobs.push(job);
+			}
+			if (jobs.length === 0) break;
+
+			await Promise.all(jobs.map((j) => processWithBrowser(browser, j)));
+			processedTotal += jobs.length;
+
+			if (maxTotal > 0 && processedTotal >= maxTotal) break;
+		} while (drain);
 	} finally {
 		await browser.close().catch(() => {});
 	}
 
-	return json({ ok: true, processedCount: jobs.length });
+	return json({ ok: true, processedCount: processedTotal });
 };
