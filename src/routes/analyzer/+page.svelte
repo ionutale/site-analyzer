@@ -49,6 +49,9 @@
 	let lastLinksAt = $state<Date | null>(null);
 	let resumeLoading = $state(false);
 	let batchLoading = $state(false);
+	// dev processing controls
+	let devCount = $state(3);
+	let draining = $state(false);
 	// in-progress table state
 	let ingestingItems = $state<LinkItem[]>([]);
 	let ingestingLoading = $state(false);
@@ -184,15 +187,37 @@
 
 	async function processBatch() {
 		if (!siteId) return;
-		const res = await fetch(`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=3`, {
-			method: 'POST'
-		});
+		const res = await fetch(
+			`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=${encodeURIComponent(String(devCount))}`,
+			{ method: 'POST' }
+		);
 		if (res.ok) {
 			toasts.info('Triggered small batch processing');
 			await fetchStatus();
 			await fetchLinks();
 		} else {
 			toasts.error('Failed to process batch');
+		}
+	}
+
+	async function drainQueue() {
+		if (!siteId) return;
+		try {
+			draining = true;
+			const res = await fetch(
+				`/api/process-batch?siteId=${encodeURIComponent(siteId)}&count=${encodeURIComponent(String(devCount))}&drain=true`,
+				{ method: 'POST' }
+			);
+			if (!res.ok) throw new Error('Drain request failed');
+			const data = await res.json();
+			toasts.success(`Drained: processed ${data.processedCount || 0} link(s)`);
+			await fetchStatus();
+			await fetchLinks();
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Drain failed: ${msg}`);
+		} finally {
+			draining = false;
 		}
 	}
 
@@ -501,9 +526,27 @@
 					</div>
 					<div class="flex-1"></div>
 					{#if dev}
-						<button class="btn btn-secondary" type="button" onclick={processBatch}
-							>Process batch</button
-						>
+						<div class="flex items-end gap-2">
+							<div class="form-control w-28">
+								<label class="label" for="devCount"><span class="label-text">Concurrency</span></label>
+								<select id="devCount" class="select-bordered select" bind:value={devCount}>
+									<option value={1}>1</option>
+									<option value={2}>2</option>
+									<option value={3}>3</option>
+									<option value={4}>4</option>
+									<option value={5}>5</option>
+									<option value={6}>6</option>
+									<option value={8}>8</option>
+									<option value={10}>10</option>
+								</select>
+							</div>
+							<button class="btn btn-secondary" type="button" onclick={processBatch}
+								>Process batch</button
+							>
+							<button class="btn" type="button" disabled={draining} onclick={drainQueue}>
+								{draining ? 'Draining…' : 'Drain queue'}
+							</button>
+						</div>
 					{/if}
 					<button
 						class="btn"

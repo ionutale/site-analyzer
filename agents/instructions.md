@@ -22,3 +22,7 @@ put all pages behind a login screen, using firebase authentication.
 in the drawer move to the buttom the login/logout button and profile info when logged in.
 
 add a landing page for the app with a brief description of its features and a link to get started.
+
+
+Want a “max processed” input in the UI for drains? I can add a compact field next to the dropdown.
+I can also add a small progress toast that updates every batch while draining.
