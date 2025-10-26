@@ -16,3 +16,5 @@ add filters to the main dashboard to filter links by status, and search by URL.
 the home page should show a dashboard with cards with all sites added, number of pages analyzed, number of pages with errors, average load time, etc.
 
 add a side drawer in the frontend page where i can see navigate all the tools available for site analysis and SEO.
+add a favicon to the app.
+add a logo to the app.
