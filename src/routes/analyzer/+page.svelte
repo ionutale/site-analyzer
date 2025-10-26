@@ -49,6 +49,11 @@
 	let lastLinksAt = $state<Date | null>(null);
 	let resumeLoading = $state(false);
 	let batchLoading = $state(false);
+	// in-progress table state
+	let ingestingItems = $state<LinkItem[]>([]);
+	let ingestingLoading = $state(false);
+	let ingestingError = $state<string | null>(null);
+	let ingestingLimit = 100;
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -138,10 +143,36 @@
 		if (timer) clearInterval(timer);
 		fetchStatus();
 		fetchLinks();
+		fetchInProgressLinks();
 		timer = setInterval(async () => {
 			await fetchStatus();
 			await fetchLinks();
+			await fetchInProgressLinks();
 		}, 5000);
+	}
+
+	async function fetchInProgressLinks() {
+		if (!siteId) return;
+		ingestingError = null;
+		ingestingLoading = true;
+		try {
+			const params = new URLSearchParams({
+				siteId,
+				status: 'in_progress',
+				page: '1',
+				limit: String(ingestingLimit),
+				sortBy: 'updatedAt',
+				sortDir: 'desc'
+			});
+			const res = await fetch(`/api/links?${params.toString()}`);
+			if (!res.ok) throw new Error('Failed to load in-progress links');
+			const data = await res.json();
+			ingestingItems = data.items;
+		} catch (e: unknown) {
+			ingestingError = e instanceof Error ? e.message : 'Unknown in-progress error';
+		} finally {
+			ingestingLoading = false;
+		}
 	}
 
 	async function checkHealth() {
@@ -318,6 +349,33 @@
 	</div>
 
 	{#if siteId}
+		<!-- In-progress table -->
+		{#if ingestingItems.length > 0 || ingestingLoading}
+			<div class="card bg-base-200">
+				<div class="card-body gap-4">
+					<div class="flex items-center justify-between">
+						<h2 class="card-title">Currently ingesting</h2>
+						<div class="text-sm opacity-70 flex items-center gap-2">
+							{#if ingestingLoading}
+								<span class="loading loading-spinner loading-xs"></span>
+								<span>Refreshing…</span>
+							{:else}
+								<span>{ingestingItems.length} in progress</span>
+							{/if}
+						</div>
+					</div>
+					{#if ingestingLoading}
+						<div class="h-24 w-full skeleton"></div>
+					{:else}
+						<LinksTable items={ingestingItems} selected={new Set()} />
+					{/if}
+					{#if ingestingError}
+						<div class="alert alert-error"><span>{ingestingError}</span></div>
+					{/if}
+				</div>
+			</div>
+		{/if}
+
 		<div class="card bg-base-200">
 			<div class="card-body">
 				<div class="flex items-center justify-between">
