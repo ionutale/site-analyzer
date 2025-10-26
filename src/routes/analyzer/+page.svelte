@@ -52,6 +52,7 @@
 	let lastLinksAt = $state<Date | null>(null);
 	let resumeLoading = $state(false);
 	let batchLoading = $state(false);
+	let reingesting = $state(false);
 	// dev processing controls
 	let devCount = $state(3);
 	let devMax = $state<number | ''>('');
@@ -269,6 +270,32 @@
 		}
 	}
 
+	async function reingestSite() {
+		if (!siteId) return;
+		if (!confirm('Re-ingest sitemap for this site? New URLs will be added and existing kept.')) return;
+		try {
+			reingesting = true;
+			const siteUrlGuess = `https://${siteId}`;
+			const res = await fetch('/api/ingest', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteUrl: siteUrlGuess })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data?.error || 'Failed to re-ingest sitemap');
+			toasts.success(`Re-ingested: discovered ${data.discovered}, added ${data.upserted}`);
+			// ensure we are polling and refresh lists
+			startPolling();
+			await fetchStatus();
+			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Re-ingest failed: ${msg}`);
+		} finally {
+			reingesting = false;
+		}
+	}
+
 	async function batchAction(action: 'retry' | 'purge') {
 		if (!siteId || selected.size === 0) return;
 		try {
@@ -447,6 +474,9 @@
 							>Retry errors</button
 						>
 					</div>
+					<button class="btn btn-secondary" type="button" disabled={reingesting} onclick={reingestSite}
+						>Re-ingest sitemap</button
+					>
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
 				{#if !stats}

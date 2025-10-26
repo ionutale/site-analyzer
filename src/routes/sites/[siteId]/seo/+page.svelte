@@ -318,6 +318,7 @@
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Missing meta description</h2>
+					<div class="max-h-[360px] overflow-auto pr-2">
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingMetaPages as it (it._id)}
 							<li class="truncate flex items-center gap-2">
@@ -329,6 +330,7 @@
 							<li class="opacity-70">None</li>
 						{/if}
 					</ul>
+					</div>
 				</div>
 			</div>
 			<div class="card bg-base-200">
@@ -358,6 +360,7 @@
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Missing canonical URL</h2>
+					<div class="max-h-[360px] overflow-auto pr-2">
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingCanonicalPages as it (it._id)}
 							<li class="truncate flex items-center gap-2">
@@ -369,6 +372,7 @@
 							<li class="opacity-70">None</li>
 						{/if}
 					</ul>
+					</div>
 				</div>
 			</div>
 			<div class="card bg-base-200">
