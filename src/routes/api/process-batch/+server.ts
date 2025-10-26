@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { chromium } from 'playwright';
+import { chromium, type Browser } from 'playwright';
 import { links, pages, type LinkDoc, type PageDoc } from '$lib/server/db';
 import { rateLimitCheck } from '$lib/server/rate-limit';
 
@@ -31,8 +31,7 @@ async function leaseOne(siteId?: string): Promise<LinkDoc | null> {
 	return doc ?? null;
 }
 
-async function processOne(doc: LinkDoc): Promise<void> {
-	const browser = await chromium.launch({ headless: HEADLESS });
+async function processWithBrowser(browser: Browser, doc: LinkDoc): Promise<void> {
 	const pg = await browser.newPage();
 	try {
 		const resp = await pg.goto(doc.url, { waitUntil: 'networkidle', timeout: 45000 });
@@ -87,7 +86,6 @@ async function processOne(doc: LinkDoc): Promise<void> {
 		);
 	} finally {
 		await pg.close().catch(() => {});
-		await browser.close().catch(() => {});
 	}
 }
 
@@ -113,13 +111,21 @@ export const POST: RequestHandler = async (event) => {
 	const siteId = url.searchParams.get('siteId') || undefined;
 	const count = Math.max(1, Math.min(5, Number(url.searchParams.get('count') || '3')));
 
-	const processed: string[] = [];
+	// Lease up to "count" jobs first, then process concurrently using a single browser
+	const jobs: LinkDoc[] = [];
 	for (let i = 0; i < count; i++) {
 		const job = await leaseOne(siteId);
 		if (!job) break;
-		await processOne(job);
-		processed.push(job.url);
+		jobs.push(job);
+	}
+	if (jobs.length === 0) return json({ ok: true, processedCount: 0 });
+
+	const browser = await chromium.launch({ headless: HEADLESS });
+	try {
+		await Promise.all(jobs.map((j) => processWithBrowser(browser, j)));
+	} finally {
+		await browser.close().catch(() => {});
 	}
 
-	return json({ ok: true, processedCount: processed.length });
+	return json({ ok: true, processedCount: jobs.length });
 };

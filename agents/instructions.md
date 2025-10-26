@@ -18,3 +18,7 @@ the home page should show a dashboard with cards with all sites added, number of
 add a side drawer in the frontend page where i can see navigate all the tools available for site analysis and SEO.
 add a favicon to the app.
 add a logo to the app.
+put all pages behind a login screen, using firebase authentication.
+in the drawer move to the buttom the login/logout button and profile info when logged in.
+
+add a landing page for the app with a brief description of its features and a link to get started.
