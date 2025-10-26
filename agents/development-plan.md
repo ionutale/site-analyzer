@@ -181,7 +181,8 @@ Optional enhancements:
 - AppBar with a hamburger to open/close the drawer; drawer is docked on desktop (xl)
 - Drawer shows user info (avatar/name) and actions; auth controls are anchored at the bottom
 - Mobile: Drawer overlays content and closes on route change or backdrop click; keyboard focus trapped while open
-- Hide navigation items (Dashboard, Analyzer, Sites) and the Theme section when signed out
+- Hide navigation items (Dashboard, Analyzer, Sites) when signed out; Theme switch is no longer in the drawer
+- Theme selection now lives on the Profile page under an Appearance section
 - Compact theme toggle (system/light/dark) with local persistence; applied early (pre-paint) using DaisyUI themes
 - Branding: include a favicon and a logo; logo appears in the AppBar and/or drawer
 
