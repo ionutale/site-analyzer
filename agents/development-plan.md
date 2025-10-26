@@ -212,7 +212,7 @@ Optional enhancements:
 - `zod` (validate inputs and API responses)
 - `p-limit` (optional, control concurrency)
 - Playwright already present; ensure Chromium is installed (`npx playwright install chromium`)
- - Optional (future): text similarity for duplicate clustering (e.g., `string-similarity` or implement shingling)
+- Optional (future): text similarity for duplicate clustering (e.g., `string-similarity` or implement shingling)
 
 ## Scripts (package.json)
 
@@ -237,11 +237,12 @@ Optional enhancements:
   - Content view displays sanitized preview, metadata, and screenshot when enabled
   - Sites list and site detail navigation works; SEO dashboard shows expected counts
 
-## Homepage dashboard (planned)
+## Homepage dashboard (completed)
 
 Goal: a landing page that summarizes recent activity and key health metrics across all sites, with quick links into Analyzer/Sites/SEO.
 
 Data sources
+
 - `/api/sites` for per-site counts and lastUpdated
 - `/api/seo?siteId=...` for per-site SEO metrics (optionally sampled)
 - Potential new endpoint `/api/overview` to aggregate:
@@ -249,41 +250,49 @@ Data sources
   - Implementation v1 can compute on the client by fetching `/api/sites` and sampling recent pages per site
 
 UI/UX
+
 - Cards: total sites, pages analyzed, pages with errors, avg load time (recent window)
 - Recent sites list with quick actions: Open Analyzer (pre-select site), Site dashboard, SEO page
 - Small chart of errors over time (optional v2)
 
 Acceptance criteria
+
 - Visiting `/` renders cards with correct counts and a list of sites
 - Links navigate correctly using `resolve()` for internal routes
-- No blocking on large data; degrades gracefully if some APIs fail (shows partial with alerts)
+- No blocking on large data; degrades gracefully if some APIs fail (shows partial with toast notifications)
 
-## Toasts/notifications (planned)
+## Toasts/notifications (completed)
 
 Design
+
 - Use DaisyUI `toast` component; create a small Svelte store (e.g., `lib/stores/toast.ts`) with helpers: `success`, `error`, `info`
 - Render a toasts container in `+layout.svelte` so any page can push notifications
 - Replace inline alerts in Analyzer/Sites with ephemeral toasts for: ingest, batch actions, reset, resume
 
 API
-- Store shape: `{ id: string; type: 'success'|'error'|'info'; message: string; timeout?: number }`
+
+- Store shape: `{ id: string; kind: 'success'|'error'|'info'; message: string; timeout?: number }`
 - Helpers auto-expire after N ms; manual dismissal supported
 
 Acceptance criteria
+
 - Actions trigger a visible toast that auto-hides; multiple toasts queue without overlap
 - No TypeScript errors; Svelte lint clean
 
 ## Server-side rate limiting (planned)
 
 Design
+
 - Lightweight in-memory token bucket keyed by client IP (or `x-dev-token` when present)
 - Global config via `.env`: `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_TOKENS`, optional `RATE_LIMIT_BURST`
 - Implement in `hooks.server.ts` or a small wrapper used by dev endpoints; bypass when `dev` is true unless `DEV_API_TOKEN` is set
 
 Scope (initial)
+
 - Protect dev endpoints: `POST /api/process-batch`, `POST /api/reset-site`, `POST /api/links/batch`, and optionally `POST /api/resume`
 
 Acceptance criteria
+
 - Exceeding rate returns 429 with JSON `{ error: 'rate_limited' }`
 - Limits reset after window; per-IP accounting works locally
 - Configurable and disabled when variables are absent
@@ -291,16 +300,19 @@ Acceptance criteria
 ## Duplicate content detection (planned)
 
 Phase 1: Exact duplicates
+
 - Add `contentHash` (e.g., sha256 of normalized `textContent`) to `pages`
 - Index `{ siteId: 1, contentHash: 1 }`
 - SEO API: add summary of duplicate groups by `contentHash` with sample URLs
 
 Phase 2: Near-duplicates (optional)
+
 - Implement shingling + Jaccard or cosine similarity (bag-of-words) on `textContent`
 - Compute signatures as a background job; store group ids or similarity scores
 - UI: SEO page adds a "Duplicate content" section with groups and representative pages
 
 Acceptance criteria
+
 - Exact duplicates detected correctly on seeded data (>=2 pages with identical `textContent`)
 - API returns groups with counts and example URLs; UI lists them
 - Near-duplicate path is feature-flagged and can be postponed
@@ -308,6 +320,9 @@ Acceptance criteria
 ## Changelog
 
 - 2025-10-26
+  - **Completed**: Homepage dashboard with site statistics and recent sites list
+  - **Completed**: Toast notification system with success/error/info helpers
+  - **Completed**: Replaced all inline alerts with toasts for ingest, batch actions, reset, and resume
   - Added Resume endpoint to backend and wired Resume actions in Analyzer and per-site pages
   - Analyzer gained site selector, local persistence, and query param restore
   - Development plan expanded with dashboard/toasts/rate limiting/duplicate content details
@@ -347,16 +362,29 @@ Acceptance criteria
 
 - Resume capability surfaced end-to-end
   - Server: `POST /api/resume` requeues stale leases and retries errors (under cap)
-  - UI: Analyzer + per-site pages show "Resume all" and "Retry errors" buttons with success alerts
+  - UI: Analyzer + per-site pages show "Resume all" and "Retry errors" buttons with success toasts
 - Analyzer improvements
   - Site selector loads from `/api/sites`, persists last selection, supports `?siteId` deep-link
   - External links open with direct hrefs; internal links continue to use `resolve()`
 - DX: ambient TS declarations added for Svelte 5 helpers used in templates
 
+### Phase 6: Homepage & Notifications (completed)
+
+- **Homepage dashboard**
+  - Landing page at `/` with summary cards: total sites, pages analyzed, pages with errors
+  - Recent sites list (top 10 by last updated) with quick-action buttons
+  - Links to Analyzer (with pre-selected site), Site dashboard, and SEO analysis
+  - Graceful error handling with toast notifications
+- **Toast notification system**
+  - DaisyUI toast components with Svelte store (`lib/stores/toast.ts`)
+  - Helpers: `success()`, `error()`, `info()` with auto-expiring toasts
+  - Rendered in `+layout.svelte` for app-wide availability
+  - Replaced all inline error alerts with toasts in Analyzer, Sites, and SEO pages
+  - Success notifications for: ingest, batch actions, reset, and resume operations
+  - Clean TypeScript types and lint-compliant code
+
 ### Next steps (planned)
 
-- Homepage dashboard: recent sites, quick stats (pages analyzed, errors, avg load time), and shortcuts
-- Toasts/notifications framework (replace inline alerts for ingest/batch/reset/resume)
 - Server-side rate limiting (in-memory token bucket) for dev endpoints
 - Duplicate content detection using `contentHash`/`textContent` clustering
 

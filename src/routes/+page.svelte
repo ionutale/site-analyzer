@@ -15,6 +15,10 @@
 	let loading = $state(true);
 	let errorMsg = $state<string | null>(null);
 
+	function analyzerLink(siteId: string) {
+		return `${resolve('/analyzer')}?siteId=${encodeURIComponent(siteId)}`;
+	}
+
 	let totals = $state({
 		sites: 0,
 		analyzed: 0,
@@ -50,19 +54,19 @@
 	{#if loading}
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<div class="stat rounded-box bg-base-200">
-				<div class="skeleton h-6 w-24"></div>
-				<div class="skeleton h-8 w-16"></div>
+				<div class="h-6 w-24 skeleton"></div>
+				<div class="h-8 w-16 skeleton"></div>
 			</div>
 			<div class="stat rounded-box bg-base-200">
-				<div class="skeleton h-6 w-24"></div>
-				<div class="skeleton h-8 w-16"></div>
+				<div class="h-6 w-24 skeleton"></div>
+				<div class="h-8 w-16 skeleton"></div>
 			</div>
 			<div class="stat rounded-box bg-base-200">
-				<div class="skeleton h-6 w-24"></div>
-				<div class="skeleton h-8 w-16"></div>
+				<div class="h-6 w-24 skeleton"></div>
+				<div class="h-8 w-16 skeleton"></div>
 			</div>
 		</div>
-		<div class="skeleton h-40 w-full"></div>
+		<div class="h-40 w-full skeleton"></div>
 	{:else}
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<div class="stat rounded-box bg-base-200">
@@ -98,7 +102,10 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each sites.slice().sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()).slice(0, 10) as s (s.siteId)}
+							{#each sites
+								.slice()
+								.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+								.slice(0, 10) as s (s.siteId)}
 								<tr>
 									<td><code>{s.siteId}</code></td>
 									<td>{s.done}</td>
@@ -106,11 +113,13 @@
 									<td>{s.total}</td>
 									<td>{new Date(s.lastUpdated).toLocaleString()}</td>
 									<td>
+										<!-- eslint-disable svelte/no-navigation-without-resolve -->
 										<div class="btn-group">
-											  <a class="btn btn-sm" href={`/analyzer?siteId=${encodeURIComponent(s.siteId)}`}>Analyzer</a>
+											<a class="btn btn-sm" href={analyzerLink(s.siteId)}>Analyzer</a>
 											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}`)}>Site</a>
 											<a class="btn btn-sm" href={resolve(`/sites/${s.siteId}/seo`)}>SEO</a>
 										</div>
+										<!-- eslint-enable svelte/no-navigation-without-resolve -->
 									</td>
 								</tr>
 							{/each}

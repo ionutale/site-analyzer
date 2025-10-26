@@ -91,22 +91,28 @@
 	async function resetSite() {
 		if (!dev) return;
 		if (!confirm('Delete all data for this site?')) return;
-		const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, {
-			method: 'POST'
-		});
-		if (res.ok) {
+		try {
+			const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, {
+				method: 'POST'
+			});
+			if (!res.ok) throw new Error('Failed to reset site');
+			toasts.success('Site data deleted successfully');
 			await fetchStatus();
 			await fetchLinks();
 			await fetchPages();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Reset failed: ${msg}`);
 		}
 	}
 
 	async function resume(mode: 'all' | 'retry-errors' = 'all') {
-		const res = await fetch(
-			`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
-			{ method: 'POST' }
-		);
-		if (res.ok) {
+		try {
+			const res = await fetch(
+				`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
+				{ method: 'POST' }
+			);
+			if (!res.ok) throw new Error('Failed to resume processing');
 			const data = await res.json();
 			toasts.success(
 				`Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
@@ -116,6 +122,9 @@
 			await fetchStatus();
 			await fetchLinks();
 			await fetchPages();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Resume failed: ${msg}`);
 		}
 	}
 </script>
@@ -134,7 +143,6 @@
 			{/if}
 		</div>
 	</div>
-
 
 	{#if stats}
 		<div class="card bg-base-200">
@@ -280,6 +288,7 @@
 						{#each links as it (it._id)}
 							<tr>
 								<td class="max-w-[420px] truncate">
+									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 									<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 								</td>
 								<td
@@ -420,6 +429,7 @@
 							<tr>
 								<td class="max-w-[320px] truncate">{pg.title || '—'}</td>
 								<td class="max-w-[420px] truncate">
+									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 									<a class="link" href={pg.url} target="_blank" rel="noopener">{pg.url}</a>
 								</td>
 								<td>{pg.statusCode ?? 'n/a'}</td>

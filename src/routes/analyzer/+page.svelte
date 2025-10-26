@@ -7,7 +7,6 @@
 	let siteUrl = $state('');
 	let siteId = $state<string | null>(null);
 	let loading = $state(false);
-	let errorMsg = $state<string | null>(null);
 	let sites = $state<Array<{ siteId: string }>>([]);
 
 	let stats = $state<{
@@ -43,7 +42,6 @@
 	// use toasts for resume feedback
 
 	async function ingest() {
-		errorMsg = null;
 		loading = true;
 		try {
 			const res = await fetch('/api/ingest', {
@@ -56,14 +54,18 @@
 			siteId = data.siteId;
 			try {
 				if (siteId) localStorage.setItem('lastSiteId', siteId);
-			} catch {}
+			} catch {
+				// Ignore localStorage errors
+			}
+			toasts.success(`Sitemap ingested: ${data.inserted || 0} URLs added`);
 			// reset filters
 			page = 1;
 			// start polling
 			startPolling();
 			await fetchLinks();
 		} catch (err: unknown) {
-			errorMsg = err instanceof Error ? err.message : 'Unknown error';
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Ingest failed: ${msg}`);
 		} finally {
 			loading = false;
 		}
@@ -135,36 +137,48 @@
 	async function resetSite() {
 		if (!siteId) return;
 		if (!confirm('Delete all data for this site?')) return;
-		const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, {
-			method: 'POST'
-		});
-		if (res.ok) {
+		try {
+			const res = await fetch(`/api/reset-site?siteId=${encodeURIComponent(siteId)}`, {
+				method: 'POST'
+			});
+			if (!res.ok) throw new Error('Failed to reset site');
+			toasts.success('Site data deleted successfully');
 			await fetchStatus();
 			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Reset failed: ${msg}`);
 		}
 	}
 
 	async function batchAction(action: 'retry' | 'purge') {
 		if (!siteId || selected.size === 0) return;
-		const res = await fetch('/api/links/batch', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ siteId, ids: Array.from(selected), action })
-		});
-		if (res.ok) {
+		try {
+			const res = await fetch('/api/links/batch', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId, ids: Array.from(selected), action })
+			});
+			if (!res.ok) throw new Error('Batch action failed');
+			const actionText = action === 'retry' ? 'retried' : 'purged';
+			toasts.success(`${selected.size} link(s) ${actionText} successfully`);
 			selected.clear();
 			await fetchStatus();
 			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Batch action failed: ${msg}`);
 		}
 	}
 
 	async function resume(mode: 'all' | 'retry-errors' = 'all') {
 		if (!siteId) return;
-		const res = await fetch(
-			`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
-			{ method: 'POST' }
-		);
-		if (res.ok) {
+		try {
+			const res = await fetch(
+				`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
+				{ method: 'POST' }
+			);
+			if (!res.ok) throw new Error('Failed to resume processing');
 			const data = await res.json();
 			toasts.success(
 				`Resumed: requeued stale ${data.requeuedStale ?? 0}, retried errors ${
@@ -173,6 +187,9 @@
 			);
 			await fetchStatus();
 			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Resume failed: ${msg}`);
 		}
 	}
 
@@ -185,7 +202,9 @@
 				const data = (await res.json()) as Array<{ siteId: string }>;
 				sites = data;
 			}
-		} catch {}
+		} catch {
+			// Ignore API errors for sites list
+		}
 	}
 
 	onMount(() => {
@@ -198,7 +217,9 @@
 				siteId = qSite || stored;
 				startPolling();
 			}
-		} catch {}
+		} catch {
+			// Ignore localStorage errors
+		}
 		return () => timer && clearInterval(timer);
 	});
 </script>
@@ -243,7 +264,9 @@
 				onchange={() => {
 					try {
 						if (siteId) localStorage.setItem('lastSiteId', siteId);
-					} catch {}
+					} catch {
+						// Ignore localStorage errors
+					}
 					page = 1;
 					startPolling();
 				}}
@@ -255,13 +278,6 @@
 			</select>
 		</div>
 	</div>
-
-	{#if errorMsg}
-		<div class="alert alert-error">
-			<span>{errorMsg}</span>
-		</div>
-	{/if}
-
 
 	{#if siteId}
 		<div class="card bg-base-200">
@@ -443,9 +459,8 @@
 										/></td
 									>
 									<td class="max-w-[420px] truncate">
-										<a class="link" href={it.url} target="_blank" rel="noopener"
-											>{it.url}</a
-										>
+										<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+										<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 									</td>
 									<td>
 										<span

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { toasts } from '$lib/stores/toast';
 	let { params } = $props();
 	const siteId = params.siteId as string;
 	let slowMs = $state(3000);
@@ -43,30 +44,26 @@
 		samples: SeoSamples;
 	};
 	let data = $state<SeoResponse | null>(null);
-	let errorMsg = $state<string | null>(null);
 
 	async function loadSeo() {
-		errorMsg = null;
 		try {
 			const res = await fetch(`/api/seo?siteId=${encodeURIComponent(siteId)}&slowMs=${slowMs}`);
 			if (!res.ok) throw new Error('Failed to load SEO data');
 			data = await res.json();
 		} catch (e: unknown) {
-			errorMsg = e instanceof Error ? e.message : 'Unknown error';
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Failed to load SEO data: ${msg}`);
 		}
 	}
 	loadSeo();
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <section class="space-y-6">
 	<div class="flex items-center justify-between">
 		<h1 class="text-3xl font-bold">SEO: <code>{siteId}</code></h1>
 		<a href={resolve(`/sites/${siteId}`)} class="btn">Back to site</a>
 	</div>
-
-	{#if errorMsg}
-		<div class="alert alert-error"><span>{errorMsg}</span></div>
-	{/if}
 
 	{#if data}
 		<div class="card bg-base-200">
@@ -138,9 +135,7 @@
 								{#each data.samples.slowPages as it (it._id)}
 									<tr>
 										<td class="max-w-[420px] truncate"
-											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
-												>{it.url}</a
-											></td
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 										<td>{it.loadTimeMs}</td>
 									</tr>
@@ -159,7 +154,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingTitlePages as it (it._id)}
 							<li class="truncate">
-								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingTitlePages.length === 0}
@@ -174,7 +169,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingMetaPages as it (it._id)}
 							<li class="truncate">
-								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingMetaPages.length === 0}
@@ -193,9 +188,7 @@
 								{#each data.samples.non200Pages as it (it._id)}
 									<tr>
 										<td class="max-w-[420px] truncate"
-											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
-												>{it.url}</a
-											></td
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 										<td>{it.statusCode ?? 'n/a'}</td>
 									</tr>
@@ -214,7 +207,7 @@
 					<ul class="ml-5 list-disc">
 						{#each data.samples.missingCanonicalPages as it (it._id)}
 							<li class="truncate">
-								<a class="link" href={resolve(it.url)} target="_blank" rel="noopener">{it.url}</a>
+								<a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a>
 							</li>
 						{/each}
 						{#if data.samples.missingCanonicalPages.length === 0}
@@ -235,9 +228,7 @@
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
 										<td class="max-w-[320px] truncate"
-											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
-												>{it.url}</a
-											></td
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 									</tr>
 								{/each}
@@ -261,9 +252,7 @@
 										<td class="max-w-[260px] truncate">{it.title ?? '—'}</td>
 										<td>{it.titleLength ?? 'n/a'}</td>
 										<td class="max-w-[320px] truncate"
-											><a class="link" href={resolve(it.url)} target="_blank" rel="noopener"
-												>{it.url}</a
-											></td
+											><a class="link" href={it.url} target="_blank" rel="noopener">{it.url}</a></td
 										>
 									</tr>
 								{/each}
@@ -290,7 +279,7 @@
 											<ul class="ml-5 list-disc">
 												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
-														<a class="link" href={resolve(u)} target="_blank" rel="noopener">{u}</a>
+														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}
 											</ul>
@@ -320,7 +309,7 @@
 											<ul class="ml-5 list-disc">
 												{#each it.urls as u (u)}
 													<li class="max-w-[320px] truncate">
-														<a class="link" href={resolve(u)} target="_blank" rel="noopener">{u}</a>
+														<a class="link" href={u} target="_blank" rel="noopener">{u}</a>
 													</li>
 												{/each}
 											</ul>
@@ -338,3 +327,4 @@
 		</div>
 	{/if}
 </section>
+<!-- eslint-enable svelte/no-navigation-without-resolve -->
