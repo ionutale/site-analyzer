@@ -70,12 +70,14 @@
 
 						<div>
 							<h2 class="mb-2 text-xl font-semibold">Appearance</h2>
-							<label class="label"><span class="label-text">Theme</span></label>
-							<div class="join">
-								<button class="btn join-item" aria-pressed={themePref==='system'} onclick={() => setThemePref('system')}>System</button>
-								<button class="btn join-item" aria-pressed={themePref==='light'} onclick={() => setThemePref('light')}>Light</button>
-								<button class="btn join-item" aria-pressed={themePref==='dark'} onclick={() => setThemePref('dark')}>Dark</button>
-							</div>
+							<fieldset>
+								<legend class="label"><span class="label-text">Theme</span></legend>
+								<div class="join">
+									<button class="btn join-item" aria-pressed={themePref==='system'} onclick={() => setThemePref('system')}>System</button>
+									<button class="btn join-item" aria-pressed={themePref==='light'} onclick={() => setThemePref('light')}>Light</button>
+									<button class="btn join-item" aria-pressed={themePref==='dark'} onclick={() => setThemePref('dark')}>Dark</button>
+								</div>
+							</fieldset>
 							<p class="mt-1 text-sm opacity-70">Current: {themeLabel(themePref)}</p>
 						</div>
 					</div>
