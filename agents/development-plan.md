@@ -105,6 +105,7 @@ Indexes:
   - Resolve and fetch `sitemap.xml` (handle `sitemap_index.xml` variants)
   - Parse with fast-xml-parser; support multiple sitemap files
   - Bulk upsert all URLs into `links` with `status=pending`
+  - Assign per-item `createdAt`/`updatedAt` so UI ordering (default: `updatedAt desc`) preserves sitemap order
 - Response: `{ siteId, inserted: number, pendingTotal: number }`
 
 ### 3) Status and data APIs
@@ -148,7 +149,8 @@ Indexes:
 - File: `scripts/worker.ts` (Node/TS)
 - Concurrency via a small pool; loop until no jobs, then sleep briefly
 - Lease pattern:
-  - `findOneAndUpdate({ status:'pending' }, { $set: { status:'in_progress', leasedAt: now }, $inc: { attempts: 1 } }, { sort: { createdAt: 1 } })`
+  - `findOneAndUpdate({ status:'pending' }, { $set: { status:'in_progress', leasedAt: now }, $inc: { attempts: 1 } }, { sort: { createdAt: -1, updatedAt: -1, _id: -1 } })`
+    - Newest-first leasing aligns processing order with the UI’s default sort (latest first)
   - If a job is `in_progress` longer than `LEASE_TIMEOUT_MS` and `attempts < WORKER_MAX_ATTEMPTS`, requeue to `pending`
 - Fetching implementation:
   - Launch Chromium headless once per worker (reuse browser)
@@ -328,6 +330,10 @@ Acceptance criteria
   - Added Resume endpoint to backend and wired Resume actions in Analyzer and per-site pages
   - Analyzer gained site selector, local persistence, and query param restore
   - Development plan expanded with dashboard/toasts/rate limiting/duplicate content details
+  - Sites list updated: sortable headers and client-side pagination via `SitesTable` + `PaginationControls`
+  - Analyzer UX: persistent StatusSummary with dimming and inline spinners; "In progress" tile shows a per-tile loading indicator
+  - Order alignment: ingest assigns per-URL timestamps and worker leases newest-first so processing matches rendered order
+  - Worker prefers `CONCURRENT_WORKERS` (legacy `WORKER_CONCURRENCY` supported) and logs startup config (concurrency, headless, attempts, lease timeout, screenshots)
 
 ## Milestones & acceptance criteria
 
@@ -387,8 +393,9 @@ Acceptance criteria
 
 ### Next steps (planned)
 
-- Server-side rate limiting (in-memory token bucket) for dev endpoints
-- Duplicate content detection using `contentHash`/`textContent` clustering
+- Consider making re-ingest preserve original order by only setting `updatedAt` on insert (not on updates)
+- When combining sort + pagination in the Sites list, move sorting responsibility to the parent so slicing happens after sort
+- Optional micro progress indicator above StatusSummary during auto-refresh
 
 ## Risks & mitigations
 

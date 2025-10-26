@@ -129,7 +129,7 @@ This project is a site analyzer built with SvelteKit + Tailwind (DaisyUI) and Mo
 - Processes pages with a Playwright-based worker (fetches HTML, extracts text/SEO metrics)
 - Surfaces dashboards and tools:
   - Analyzer: view/crawl status, filter, batch retry/purge, resume stuck jobs
-  - Sites: list sites and per-site dashboards
+  - Sites: list sites and per-site dashboards (sortable headers, client-side pagination)
   - SEO: missing/duplicate titles/meta/canonical, slow pages, duplicate content by text hash
   - Home: high-level cards and recent sites
 
@@ -141,6 +141,13 @@ Main routes:
 - `/sites/[siteId]` Site dashboard
 - `/sites/[siteId]/seo` SEO dashboard
 - `/analyzer/page/[id]` Page details
+
+### What’s new
+
+- Analyzer UX: persistent status summary during refresh with dimming and inline spinner on the "In progress" tile; toasts for actions
+- Sites list: new `SitesTable` with sortable headers and client-side pagination, also used on Home’s recent sites
+- Order alignment: ingest stamps per-URL timestamps and the worker leases newest-first so processing matches UI ordering
+- Worker prefers `CONCURRENT_WORKERS` (legacy `WORKER_CONCURRENCY` supported) and logs chosen startup config
 
 ## Environment variables
 
@@ -186,6 +193,7 @@ Notes:
 
 - The app expects MongoDB to be running. See the Docker Compose section above for local setup.
 - The worker will compute text-only content and SEO metrics, and optionally write screenshots when enabled.
+- On startup, the worker logs the chosen configuration (concurrency, headless mode, max attempts, lease timeout, screenshots flag).
 
 ## Dev endpoints and protections
 
