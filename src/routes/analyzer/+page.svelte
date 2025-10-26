@@ -53,6 +53,7 @@
 	let resumeLoading = $state(false);
 	let batchLoading = $state(false);
 	let reingesting = $state(false);
+	let refetching = $state(false);
 	// dev processing controls
 	let devCount = $state(3);
 	let devMax = $state<number | ''>('');
@@ -296,6 +297,29 @@
 		}
 	}
 
+	async function refetchSite() {
+		if (!siteId) return;
+		if (!confirm('Refetch entire site and generate a new ingest session?')) return;
+		try {
+			refetching = true;
+			const res = await fetch('/api/refetch-site', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data?.error || 'Failed to refetch');
+			toasts.success(`Refetch queued ${data.modified ?? 0} links\nIngest ID: ${data.ingestId}`);
+			await fetchStatus();
+			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Refetch failed: ${msg}`);
+		} finally {
+			refetching = false;
+		}
+	}
+
 	async function batchAction(action: 'retry' | 'purge') {
 		if (!siteId || selected.size === 0) return;
 		try {
@@ -476,6 +500,9 @@
 					</div>
 					<button class="btn btn-secondary" type="button" disabled={reingesting} onclick={reingestSite}
 						>Re-ingest sitemap</button
+					>
+					<button class="btn btn-primary" type="button" disabled={refetching} onclick={refetchSite}
+						>{refetching ? 'Refetching…' : 'Refetch site'}</button
 					>
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
