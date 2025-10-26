@@ -67,6 +67,8 @@
 		samples: SeoSamples;
 	};
 	let data = $state<SeoResponse | null>(null);
+	let showA11y = $state(true);
+	let showImages = $state(true);
 
 	async function loadSeo() {
 		try {
@@ -107,6 +109,10 @@
 						/>
 					</div>
 					<button class="btn" onclick={loadSeo}>Reload</button>
+					<div class="ml-auto flex items-center gap-4">
+						<label class="label cursor-pointer gap-2"><span class="label-text">A11y</span><input type="checkbox" class="toggle" bind:checked={showA11y} /></label>
+						<label class="label cursor-pointer gap-2"><span class="label-text">Images</span><input type="checkbox" class="toggle" bind:checked={showImages} /></label>
+					</div>
 				</div>
 				<ul class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
 					<li class="stat rounded-box bg-base-100">
@@ -178,6 +184,7 @@
 		</div>
 
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			{#if showA11y}
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Accessibility: images missing alt</h2>
@@ -235,6 +242,8 @@
 					</div>
 				</div>
 			</div>
+			{/if}
+			{#if showImages}
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Images</h2>
@@ -263,6 +272,7 @@
 					</ul>
 				</div>
 			</div>
+			{/if}
 			<div class="card bg-base-200">
 				<div class="card-body">
 					<h2 class="card-title">Top slow pages</h2>

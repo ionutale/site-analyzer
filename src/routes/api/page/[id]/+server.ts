@@ -38,6 +38,26 @@ export const GET: RequestHandler = async ({ params }) => {
 		textExcerpt: doc.textExcerpt ?? null,
 		sanitizedExcerpt,
 		content: doc.content,
-		screenshotPath: doc.screenshotPath ?? null
+		screenshotPath: doc.screenshotPath ?? null,
+		a11y: {
+			imagesMissingAlt: doc.a11y?.imagesMissingAlt ?? 0,
+			anchorsWithoutText: doc.a11y?.anchorsWithoutText ?? 0,
+			h1Count: doc.a11y?.h1Count ?? 0
+		},
+		imagesMeta: {
+			total: doc.imagesMeta?.total ?? 0,
+			counts: {
+				avif: doc.imagesMeta?.counts?.avif ?? 0,
+				webp: doc.imagesMeta?.counts?.webp ?? 0,
+				jpeg: doc.imagesMeta?.counts?.jpeg ?? 0,
+				jpg: doc.imagesMeta?.counts?.jpg ?? 0,
+				png: doc.imagesMeta?.counts?.png ?? 0,
+				gif: doc.imagesMeta?.counts?.gif ?? 0,
+				svg: doc.imagesMeta?.counts?.svg ?? 0,
+				other: doc.imagesMeta?.counts?.other ?? 0
+			},
+			largeDimensions: doc.imagesMeta?.largeDimensions ?? 0,
+			sampleLarge: doc.imagesMeta?.sampleLarge?.slice(0, 10) ?? []
+		}
 	});
 };

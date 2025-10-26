@@ -19,6 +19,39 @@
 			<div class="rounded bg-base-200 p-2">Type: <strong>{page.contentType ?? 'n/a'}</strong></div>
 		</div>
 
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+			<div class="rounded bg-base-200 p-3">
+				<h3 class="mb-2 text-lg font-medium">Accessibility</h3>
+				<ul class="ml-5 list-disc">
+					<li>Images missing alt: <strong>{page.a11y?.imagesMissingAlt ?? 0}</strong></li>
+					<li>Anchors without text: <strong>{page.a11y?.anchorsWithoutText ?? 0}</strong></li>
+					<li>H1 count: <strong>{page.a11y?.h1Count ?? 0}</strong></li>
+				</ul>
+			</div>
+			<div class="rounded bg-base-200 p-3">
+				<h3 class="mb-2 text-lg font-medium">Images</h3>
+				<p>Total images: <strong>{page.imagesMeta?.total ?? 0}</strong>; Large images: <strong>{page.imagesMeta?.largeDimensions ?? 0}</strong></p>
+				<div class="overflow-x-auto">
+					<table class="table mt-2">
+						<thead><tr><th>Format</th><th>Count</th></tr></thead>
+						<tbody>
+							{#each Object.entries(page.imagesMeta?.counts || {}) as it (it[0])}
+								<tr><td class="uppercase">{it[0]}</td><td>{it[1]}</td></tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{#if page.imagesMeta?.sampleLarge?.length}
+					<h4 class="mt-2 font-semibold">Sample large images</h4>
+					<ul class="ml-5 list-disc">
+						{#each page.imagesMeta.sampleLarge as u (u)}
+							<li class="truncate"><a class="link" href={u} target="_blank" rel="noopener">{u}</a></li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		</div>
+
 		<h2 class="mt-4 text-lg font-medium">Excerpt</h2>
 		<div class="prose max-w-none overflow-x-auto rounded bg-base-200 p-3">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->

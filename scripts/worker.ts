@@ -16,11 +16,16 @@ const SCREENSHOTS = (process.env.PLAYWRIGHT_SCREENSHOTS || 'false') === 'true';
 const SCREENSHOTS_DIR =
 	process.env.SCREENSHOTS_DIR || path.join(process.cwd(), 'static', 'screenshots');
 
+// Large image thresholds (configurable)
+const LARGE_IMG_MIN_W = Number(process.env.LARGE_IMG_MIN_W || '1600');
+const LARGE_IMG_MIN_H = Number(process.env.LARGE_IMG_MIN_H || '1600');
+const LARGE_IMG_MIN_AREA = Number(process.env.LARGE_IMG_MIN_AREA || '2000000');
+
 // Startup config log for visibility
 console.info(
 	`[worker] headless=${HEADLESS} concurrency=${CONCURRENCY} maxAttempts=${MAX_ATTEMPTS} leaseTimeoutMs=${LEASE_TIMEOUT_MS} screenshots=${SCREENSHOTS ? 'on' : 'off'}${
 		SCREENSHOTS ? ` dir=${SCREENSHOTS_DIR}` : ''
-	}`
+	} largeImageThresholds={w>=${LARGE_IMG_MIN_W}, h>=${LARGE_IMG_MIN_H}, area>=${LARGE_IMG_MIN_AREA}}`
 );
 
 async function leaseOne(): Promise<LinkDoc | null> {
@@ -72,7 +77,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 		const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
 
 		// Accessibility + images quick checks in the page context
-		const a11yAndImages = await pg.evaluate(() => {
+		const a11yAndImages = await pg.evaluate((thresholds) => {
 			function extFromUrl(u: string): string {
 				try {
 					const url = new URL(u, location.href);
@@ -100,7 +105,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 				else if (ext === 'jpe') counts.jpeg++;
 				else counts.other++;
 				const area = i.w * i.h;
-				if (i.w >= 1600 || i.h >= 1600 || area >= 2_000_000) {
+				if (i.w >= thresholds.minW || i.h >= thresholds.minH || area >= thresholds.minArea) {
 					if (large.length < 5) large.push(i.src);
 				}
 			});
@@ -115,7 +120,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 				a11y: { imagesMissingAlt, anchorsWithoutText, h1Count },
 				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large }
 			};
-		});
+		}, { minW: LARGE_IMG_MIN_W, minH: LARGE_IMG_MIN_H, minArea: LARGE_IMG_MIN_AREA });
 
 		const excerpt = html.slice(0, 2000);
 		const normalizedText = (textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
