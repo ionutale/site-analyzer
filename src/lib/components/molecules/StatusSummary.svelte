@@ -1,6 +1,6 @@
 <script lang="ts">
 	import StatItem from '$lib/components/atoms/StatItem.svelte';
-	let { stats } = $props<{
+	let { stats, loading = false } = $props<{
 		stats: {
 			pending: number;
 			in_progress: number;
@@ -8,13 +8,14 @@
 			error: number;
 			total: number;
 		} | null;
+		loading?: boolean;
 	}>();
 </script>
 
 {#if stats}
 	<ul class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
 		<StatItem title="Pending" value={stats.pending} />
-		<StatItem title="In progress" value={stats.in_progress} />
+		<StatItem title="In progress" value={stats.in_progress} loading={loading} />
 		<StatItem title="Done" value={stats.done} />
 		<StatItem title="Error" value={stats.error} />
 		<StatItem title="Total" value={stats.total} />

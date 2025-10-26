@@ -18,6 +18,9 @@
 		error: number;
 		total: number;
 	} | null>(null);
+	let statusLoading = $state(false);
+	let statusError = $state<string | null>(null);
+	let lastStatusAt = $state<Date | null>(null);
 	let timer: ReturnType<typeof setInterval> | null = null;
 
 	// links table state
@@ -41,6 +44,11 @@
 	let sortDir = $state<'asc' | 'desc'>('desc');
 	let onlyErrors = $state(false);
 	let selected = $state<Set<string>>(new Set());
+	let linksLoading = $state(false);
+	let linksError = $state<string | null>(null);
+	let lastLinksAt = $state<Date | null>(null);
+	let resumeLoading = $state(false);
+	let batchLoading = $state(false);
 	// use toasts for resume feedback
 
 	async function ingest() {
@@ -74,9 +82,12 @@
 	}
 
 	async function fetchStatus() {
+		statusError = null;
 		if (!siteId) return;
-		const res = await fetch(`/api/status?siteId=${encodeURIComponent(siteId)}`);
-		if (res.ok) {
+		statusLoading = true;
+		try {
+			const res = await fetch(`/api/status?siteId=${encodeURIComponent(siteId)}`);
+			if (!res.ok) throw new Error('Failed to refresh status');
 			const data = await res.json();
 			stats = {
 				pending: data.pending,
@@ -85,6 +96,11 @@
 				error: data.error,
 				total: data.total
 			};
+			lastStatusAt = new Date();
+		} catch (e: unknown) {
+			statusError = e instanceof Error ? e.message : 'Unknown status error';
+		} finally {
+			statusLoading = false;
 		}
 	}
 
@@ -99,14 +115,22 @@
 		});
 		if (statusFilter) params.set('status', statusFilter);
 		if (q.trim()) params.set('q', q.trim());
-		const res = await fetch(`/api/links?${params.toString()}`);
-		if (res.ok) {
+		linksError = null;
+		linksLoading = true;
+		try {
+			const res = await fetch(`/api/links?${params.toString()}`);
+			if (!res.ok) throw new Error('Failed to load links');
 			const data = await res.json();
 			items = data.items;
 			total = data.total;
+			lastLinksAt = new Date();
 			// clear selection for items no longer visible
 			const visibleIds = new Set(items.map((i) => i._id));
 			selected = new Set([...selected].filter((id) => visibleIds.has(id)));
+		} catch (e: unknown) {
+			linksError = e instanceof Error ? e.message : 'Unknown links error';
+		} finally {
+			linksLoading = false;
 		}
 	}
 
@@ -123,6 +147,8 @@
 	async function checkHealth() {
 		const res = await fetch('/api/health');
 		healthOk = res.ok;
+		if (healthOk) toasts.success('DB health: OK');
+		else toasts.error('DB health: Issue detected');
 	}
 
 	async function processBatch() {
@@ -131,8 +157,11 @@
 			method: 'POST'
 		});
 		if (res.ok) {
+			toasts.info('Triggered small batch processing');
 			await fetchStatus();
 			await fetchLinks();
+		} else {
+			toasts.error('Failed to process batch');
 		}
 	}
 
@@ -156,6 +185,7 @@
 	async function batchAction(action: 'retry' | 'purge') {
 		if (!siteId || selected.size === 0) return;
 		try {
+			batchLoading = true;
 			const res = await fetch('/api/links/batch', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -170,12 +200,15 @@
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : 'Unknown error';
 			toasts.error(`Batch action failed: ${msg}`);
+		} finally {
+			batchLoading = false;
 		}
 	}
 
 	async function resume(mode: 'all' | 'retry-errors' = 'all') {
 		if (!siteId) return;
 		try {
+			resumeLoading = true;
 			const res = await fetch(
 				`/api/resume?siteId=${encodeURIComponent(siteId)}&mode=${encodeURIComponent(mode)}`,
 				{ method: 'POST' }
@@ -192,6 +225,8 @@
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : 'Unknown error';
 			toasts.error(`Resume failed: ${msg}`);
+		} finally {
+			resumeLoading = false;
 		}
 	}
 
@@ -259,7 +294,7 @@
 	<div class="flex items-center gap-2">
 		<div class="form-control w-full sm:w-64">
 			<label class="label" for="siteSel"><span class="label-text">Select site</span></label>
-			<select
+				<select
 				id="siteSel"
 				class="select-bordered select"
 				bind:value={siteId}
@@ -270,6 +305,7 @@
 						// Ignore localStorage errors
 					}
 					page = 1;
+						if (siteId) toasts.info(`Switched to site: ${siteId}`);
 					startPolling();
 				}}
 			>
@@ -287,14 +323,40 @@
 				<div class="flex items-center justify-between">
 					<h2 class="card-title">Status</h2>
 					<div class="btn-group">
-						<button class="btn" type="button" onclick={() => resume('all')}>Resume all</button>
-						<button class="btn" type="button" onclick={() => resume('retry-errors')}
+						<button class="btn" type="button" disabled={resumeLoading} onclick={() => resume('all')}>
+							{resumeLoading ? 'Resuming…' : 'Resume all'}
+						</button>
+						<button class="btn" type="button" disabled={resumeLoading} onclick={() => resume('retry-errors')}
 							>Retry errors</button
 						>
 					</div>
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
-				<StatusSummary {stats} />
+				{#if !stats}
+					<div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+						<div class="stat rounded-box bg-base-100"><div class="h-5 w-20 skeleton"></div><div class="h-6 w-12 skeleton"></div></div>
+						<div class="stat rounded-box bg-base-100"><div class="h-5 w-20 skeleton"></div><div class="h-6 w-12 skeleton"></div></div>
+						<div class="stat rounded-box bg-base-100"><div class="h-5 w-20 skeleton"></div><div class="h-6 w-12 skeleton"></div></div>
+						<div class="stat rounded-box bg-base-100"><div class="h-5 w-20 skeleton"></div><div class="h-6 w-12 skeleton"></div></div>
+						<div class="stat rounded-box bg-base-100"><div class="h-5 w-20 skeleton"></div><div class="h-6 w-12 skeleton"></div></div>
+					</div>
+				{:else}
+					<div class={statusLoading ? 'opacity-70 transition-opacity' : ''}>
+						<StatusSummary {stats} loading={statusLoading} />
+					</div>
+				{/if}
+				<div class="mt-2 flex items-center gap-2 text-xs opacity-70">
+					{#if statusError}
+						<span class="badge badge-error">{statusError}</span>
+					{:else}
+						{#if statusLoading}
+							<span class="loading loading-spinner loading-xs"></span>
+							<span>Refreshing…</span>
+						{:else if lastStatusAt}
+						<span>Last updated: {lastStatusAt.toLocaleTimeString()}</span>
+						{/if}
+					{/if}
+				</div>
 			</div>
 		</div>
 
@@ -399,21 +461,28 @@
 					</button>
 				</div>
 
-				<LinksTable {items} {selected} on:selectionChange={(e) => (selected = e.detail)} />
+				{#if linksLoading}
+					<div class="h-32 w-full skeleton"></div>
+				{:else}
+					<LinksTable {items} {selected} on:selectionChange={(e) => (selected = e.detail)} />
+				{/if}
+				{#if linksError}
+					<div class="alert alert-error"><span>{linksError}</span></div>
+				{/if}
 
 				<div class="flex items-center justify-between gap-2">
 					<div class="flex items-center gap-2">
 						<button
 							class="btn btn-outline"
-							disabled={selected.size === 0}
+							disabled={selected.size === 0 || batchLoading}
 							onclick={() => batchAction('retry')}>Retry selected</button
 						>
 						<button
 							class="btn btn-outline btn-error"
-							disabled={selected.size === 0}
+							disabled={selected.size === 0 || batchLoading}
 							onclick={() => batchAction('purge')}>Purge selected</button
 						>
-						<span class="text-sm opacity-70">{selected.size} selected</span>
+						<span class="text-sm opacity-70">{selected.size} selected{batchLoading ? ' • Working…' : ''}</span>
 						<button class="btn btn-error" onclick={resetSite} title="Dev only">Reset site</button>
 					</div>
 					<PaginationControls
