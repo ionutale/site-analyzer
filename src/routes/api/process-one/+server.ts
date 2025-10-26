@@ -130,7 +130,10 @@ export const POST: RequestHandler = async (event) => {
           textContent: textContent || null,
           wordCount,
           contentHash,
-          ...a11yAndImages
+          ...a11yAndImages,
+          // process-one is manual; mark ingestedAt but no ingestId session
+          ingestId: null,
+          ingestedAt: now
         } satisfies Partial<PageDoc>
       },
       { upsert: true }

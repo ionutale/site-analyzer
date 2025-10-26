@@ -133,7 +133,9 @@ async function processWithBrowser(browser: Browser, doc: LinkDoc): Promise<void>
 					textContent: textContent || null,
 					wordCount,
 					contentHash,
-					...a11yAndImages
+					...a11yAndImages,
+					ingestId: (doc as unknown as { ingestId?: string | null }).ingestId ?? null,
+					ingestedAt: now
 				} satisfies Partial<PageDoc>
 			},
 			{ upsert: true }

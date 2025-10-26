@@ -165,7 +165,9 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 					wordCount,
 					contentHash: hash,
 					screenshotPath,
-					...a11yAndImages
+					...a11yAndImages,
+					ingestId: (doc as unknown as { ingestId?: string | null }).ingestId ?? null,
+					ingestedAt: now
 				} satisfies Partial<PageDoc>
 			},
 			{ upsert: true }

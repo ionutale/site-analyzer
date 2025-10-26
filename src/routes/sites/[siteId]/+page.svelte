@@ -134,6 +134,26 @@
 			toasts.error(`Resume failed: ${msg}`);
 		}
 	}
+
+	async function refetchSite() {
+		try {
+			const res = await fetch(`/api/refetch-site`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId })
+			});
+			if (!res.ok) throw new Error('Failed to refetch');
+			const data = await res.json();
+			toasts.success(
+				`Refetch started: ${data.modified ?? 0} links queued\nIngest ID: ${data.ingestId}`
+			);
+			await fetchStatus();
+			await fetchLinks();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Refetch failed: ${msg}`);
+		}
+	}
 </script>
 
 <section class="space-y-6">
@@ -145,6 +165,7 @@
 				<button class="btn" onclick={() => resume('all')}>Resume all</button>
 				<button class="btn" onclick={() => resume('retry-errors')}>Retry errors</button>
 			</div>
+			<button class="btn btn-primary" onclick={refetchSite}>Refetch site</button>
 			{#if dev}
 				<button class="btn btn-error" onclick={resetSite}>Reset site</button>
 			{/if}

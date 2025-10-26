@@ -42,6 +42,7 @@ export interface LinkDoc extends Document {
 	createdAt: Date;
 	updatedAt: Date;
 	depth?: number | null;
+    ingestId?: string | null;
 }
 
 export interface PageDoc extends Document {
@@ -63,6 +64,8 @@ export interface PageDoc extends Document {
 	screenshotPath?: string | null;
 	contentLength?: number | null; // characters in content
 	wordCount?: number | null;
+    ingestId?: string | null; // uid of the refetch/ingestion session
+    ingestedAt?: Date | null; // when this page content was ingested
 	// Accessibility quick metrics
 	a11y?: {
  		imagesMissingAlt?: number;
