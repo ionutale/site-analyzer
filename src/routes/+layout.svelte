@@ -3,8 +3,11 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+    import { goto } from '$app/navigation';
 
 	import { toasts } from '$lib/stores/toast';
+    import { user } from '$lib/stores/user';
+    import { signOutUser } from '$lib/auth/firebase';
 
 	let { children } = $props();
 
@@ -53,7 +56,26 @@
 		} catch {
 			void 0;
 		}
+
+		// start auth listener
+		user.start();
 	});
+
+	function closeDrawer() {
+		const el = document.getElementById('drawer-toggle') as HTMLInputElement | null;
+		if (el) el.checked = false;
+	}
+
+	async function logout() {
+		try {
+			await signOutUser();
+			toasts.success('Signed out');
+			await goto(resolve('/'));
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Sign-out failed: ${msg}`);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -90,6 +112,22 @@
 						<li><a href={resolve('/analyzer')}>Analyzer</a></li>
 						<li><a href={resolve('/sites')}>Sites</a></li>
 					</ul>
+					{#if $user}
+						<div class="dropdown dropdown-end">
+							<div tabindex="0" role="button" class="btn btn-ghost gap-2">
+								{#if $user.photoURL}
+									<img src={$user.photoURL} alt="Avatar" class="mask mask-squircle h-6 w-6" />
+								{/if}
+								<span class="hidden md:inline">{$user.displayName || 'Account'}</span>
+							</div>
+							<ul class="menu dropdown-content z-10 w-52 rounded-box bg-base-200 p-2 shadow">
+								<li><a href={resolve('/profile')}>Profile</a></li>
+								<li><button onclick={logout}>Logout</button></li>
+							</ul>
+						</div>
+					{:else}
+						<a class="btn" href={resolve('/login')}>Login</a>
+					{/if}
 					<div class="tooltip" data-tip={themeLabel()}>
 						<button
 							class="btn btn-square btn-ghost"
@@ -142,10 +180,27 @@
 	<div class="drawer-side">
 		<label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
 		<ul class="menu min-h-full w-80 bg-base-200 p-4 text-base-content">
+			{#if $user}
+				<li class="mb-2">
+					<div class="flex items-center gap-3">
+						{#if $user.photoURL}
+							<img src={$user.photoURL} alt="Avatar" class="mask mask-squircle h-10 w-10" />
+						{/if}
+						<div>
+							<div class="font-semibold">{$user.displayName || 'Account'}</div>
+							<div class="text-xs opacity-70">{$user.email}</div>
+						</div>
+					</div>
+				</li>
+				<li><a href={resolve('/profile')} onclick={closeDrawer}>Profile</a></li>
+				<li><button onclick={() => { closeDrawer(); logout(); }}>Logout</button></li>
+			{:else}
+				<li><a class="btn btn-primary" href={resolve('/login')} onclick={closeDrawer}>Login</a></li>
+			{/if}
 			<li class="menu-title">Navigation</li>
-			<li><a href={resolve('/')}>Home</a></li>
-			<li><a href={resolve('/analyzer')}>Analyzer</a></li>
-			<li><a href={resolve('/sites')}>Sites</a></li>
+			<li><a href={resolve('/')} onclick={closeDrawer}>Home</a></li>
+			<li><a href={resolve('/analyzer')} onclick={closeDrawer}>Analyzer</a></li>
+			<li><a href={resolve('/sites')} onclick={closeDrawer}>Sites</a></li>
 			<li class="mt-4 menu-title">Theme</li>
 			<li>
 				<div class="tooltip" data-tip={themeLabel()}>
