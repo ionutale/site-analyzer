@@ -3,6 +3,7 @@
 	import { dev } from '$app/environment';
 	import { resolve } from '$app/paths';
 	import { toasts } from '$lib/stores/toast';
+	import PaginationControls from '$lib/components/molecules/PaginationControls.svelte';
 	import StatusSummary from '$lib/components/molecules/StatusSummary.svelte';
 	import LinksTable from '$lib/components/molecules/LinksTable.svelte';
 	import PagesTable from '$lib/components/molecules/PagesTable.svelte';
@@ -260,32 +261,15 @@
 
 			<LinksTable items={links} showSelection={false} />
 
-			<div class="flex items-center justify-between">
-				<button
-					class="btn"
-					onclick={() => {
-						if (lpage > 1) {
-							lpage -= 1;
-							fetchLinks();
-						}
-					}}
-					disabled={lpage <= 1}>Prev</button
-				>
-				<div class="text-sm">
-					Page {lpage} of {Math.max(1, Math.ceil(linksTotal / llimit))} • {linksTotal} total
-				</div>
-				<button
-					class="btn"
-					onclick={() => {
-						const max = Math.max(1, Math.ceil(linksTotal / llimit));
-						if (lpage < max) {
-							lpage += 1;
-							fetchLinks();
-						}
-					}}
-					disabled={lpage >= Math.max(1, Math.ceil(linksTotal / llimit))}>Next</button
-				>
-			</div>
+			<PaginationControls
+				page={lpage}
+				max={Math.max(1, Math.ceil(linksTotal / llimit))}
+				total={linksTotal}
+				on:change={(e: CustomEvent<number>) => {
+					lpage = e.detail;
+					fetchLinks();
+				}}
+			/>
 		</div>
 	</div>
 
@@ -355,32 +339,15 @@
 
 			<PagesTable items={pages} />
 
-			<div class="flex items-center justify-between">
-				<button
-					class="btn"
-					onclick={() => {
-						if (ppage > 1) {
-							ppage -= 1;
-							fetchPages();
-						}
-					}}
-					disabled={ppage <= 1}>Prev</button
-				>
-				<div class="text-sm">
-					Page {ppage} of {Math.max(1, Math.ceil(pagesTotal / plimit))} • {pagesTotal} total
-				</div>
-				<button
-					class="btn"
-					onclick={() => {
-						const max = Math.max(1, Math.ceil(pagesTotal / plimit));
-						if (ppage < max) {
-							ppage += 1;
-							fetchPages();
-						}
-					}}
-					disabled={ppage >= Math.max(1, Math.ceil(pagesTotal / plimit))}>Next</button
-				>
-			</div>
+			<PaginationControls
+				page={ppage}
+				max={Math.max(1, Math.ceil(pagesTotal / plimit))}
+				total={pagesTotal}
+				on:change={(e: CustomEvent<number>) => {
+					ppage = e.detail;
+					fetchPages();
+				}}
+			/>
 		</div>
 	</div>
 </section>

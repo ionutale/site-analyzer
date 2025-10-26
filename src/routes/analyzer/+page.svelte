@@ -401,24 +401,7 @@
 
 				<LinksTable {items} {selected} on:selectionChange={(e) => (selected = e.detail)} />
 
-				<PaginationControls
-					{page}
-					max={Math.max(1, Math.ceil(total / limit))}
-					{total}
-					onPrev={() => {
-						if (page > 1) {
-							page -= 1;
-							fetchLinks();
-						}
-					}}
-					onNext={() => {
-						const max = Math.max(1, Math.ceil(total / limit));
-						if (page < max) {
-							page += 1;
-							fetchLinks();
-						}
-					}}
-				>
+				<div class="flex items-center justify-between gap-2">
 					<div class="flex items-center gap-2">
 						<button
 							class="btn btn-outline"
@@ -433,7 +416,16 @@
 						<span class="text-sm opacity-70">{selected.size} selected</span>
 						<button class="btn btn-error" onclick={resetSite} title="Dev only">Reset site</button>
 					</div>
-				</PaginationControls>
+					<PaginationControls
+						{page}
+						max={Math.max(1, Math.ceil(total / limit))}
+						{total}
+						on:change={(e) => {
+							page = e.detail;
+							fetchLinks();
+						}}
+					/>
+				</div>
 			</div>
 		</div>
 	{/if}
