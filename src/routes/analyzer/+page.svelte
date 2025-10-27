@@ -54,6 +54,7 @@
 	let batchLoading = $state(false);
 	let reingesting = $state(false);
 	let refetching = $state(false);
+	let refetchAndDraining = $state(false);
 	// dev processing controls
 	let devCount = $state(3);
 	let devMax = $state<number | ''>('');
@@ -320,6 +321,31 @@
 		}
 	}
 
+	async function refetchAndDrain() {
+		if (!siteId) return;
+		try {
+			refetchAndDraining = true;
+			// 1) Refetch with new ingest session
+			const res = await fetch('/api/refetch-site', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data?.error || 'Failed to refetch');
+			toasts.info(`Refetch queued ${data.modified ?? 0} links — ingestId: ${data.ingestId}`);
+			await fetchStatus();
+			await fetchLinks();
+			// 2) Immediately drain with current dev settings
+			await drainQueue();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Refetch+Drain failed: ${msg}`);
+		} finally {
+			refetchAndDraining = false;
+		}
+	}
+
 	async function batchAction(action: 'retry' | 'purge') {
 		if (!siteId || selected.size === 0) return;
 		try {
@@ -504,6 +530,11 @@
 					<button class="btn btn-primary" type="button" disabled={refetching} onclick={refetchSite}
 						>{refetching ? 'Refetching…' : 'Refetch site'}</button
 					>
+					{#if dev}
+						<button class="btn btn-accent" type="button" disabled={refetchAndDraining || draining} onclick={refetchAndDrain}
+							>{refetchAndDraining || draining ? 'Working…' : 'Refetch + Drain'}</button
+						>
+					{/if}
 					<code class="text-xs opacity-70">siteId: {siteId}</code>
 				</div>
 				{#if !stats}
