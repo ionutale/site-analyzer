@@ -1,12 +1,35 @@
 import { MongoClient } from 'mongodb';
 import type { Db, Collection, Document } from 'mongodb';
+import 'dotenv/config';
 
 let clientPromise: Promise<MongoClient> | null = null;
 let dbInstance: Db | null = null;
 let indexesEnsured = false;
 
-const getMongoUri = (): string => {
-	return process.env.MONGODB_URI || 'mongodb://localhost:27017';
+let cachedUri: string | null = null;
+
+const getMongoUri = async (): Promise<string> => {
+	if (cachedUri) return cachedUri;
+
+	// 1. Try process.env (Worker, Node)
+	if (process.env.MONGODB_URI) {
+		cachedUri = process.env.MONGODB_URI;
+		return cachedUri;
+	}
+
+	// 2. Try SvelteKit dynamic env (SvelteKit)
+	try {
+		const { env } = await import('$env/dynamic/private');
+		if (env.MONGODB_URI) {
+			cachedUri = env.MONGODB_URI;
+			return cachedUri;
+		}
+	} catch {
+		// Ignore module not found errors
+	}
+
+	console.warn('MONGODB_URI not found, falling back to localhost (no auth)');
+	return 'mongodb://localhost:27017';
 };
 
 const getDbName = (): string => {
@@ -15,8 +38,11 @@ const getDbName = (): string => {
 
 export async function getClient(): Promise<MongoClient> {
 	if (!clientPromise) {
-		const client = new MongoClient(getMongoUri());
-		clientPromise = client.connect();
+		clientPromise = (async () => {
+			const uri = await getMongoUri();
+			const client = new MongoClient(uri);
+			return client.connect();
+		})();
 	}
 	return clientPromise;
 }
