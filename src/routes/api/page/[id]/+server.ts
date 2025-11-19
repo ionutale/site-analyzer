@@ -19,6 +19,10 @@ export const GET: RequestHandler = async ({ params }) => {
 	const doc = await coll.findOne({ _id });
 	if (!doc) return json({ error: 'Not found' }, { status: 404 });
 
+	// Find pages that link TO this page
+	const linkedFromDocs = await coll.find({ outgoingLinks: doc.url }).project({ url: 1, title: 1 }).toArray();
+	const linkedFrom = linkedFromDocs.map(d => ({ url: d.url, title: d.title }));
+
 	// Return minimal fields for UI
 	const sanitizedExcerpt = sanitizeHtml(doc.textExcerpt ?? '', {
 		allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'ul', 'ol', 'li', 'br', 'span'],
@@ -41,9 +45,19 @@ export const GET: RequestHandler = async ({ params }) => {
 		screenshotPath: doc.screenshotPath ?? null,
 		a11y: {
 			imagesMissingAlt: doc.a11y?.imagesMissingAlt ?? 0,
+			imagesMissingAltUrls: doc.a11y?.imagesMissingAltUrls ?? [],
 			anchorsWithoutText: doc.a11y?.anchorsWithoutText ?? 0,
 			h1Count: doc.a11y?.h1Count ?? 0
 		},
+		seo: {
+			hTags: doc.seo?.hTags ?? {},
+			structureIssues: doc.seo?.structureIssues ?? [],
+			metaDescriptionLength: doc.seo?.metaDescriptionLength ?? 0,
+			metaDescriptionIssues: doc.seo?.metaDescriptionIssues ?? [],
+			structuredData: doc.seo?.structuredData ?? false
+		},
+		outgoingLinks: doc.outgoingLinks ?? [],
+		linkedFrom,
 		imagesMeta: {
 			total: doc.imagesMeta?.total ?? 0,
 			counts: {

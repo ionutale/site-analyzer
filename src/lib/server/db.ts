@@ -90,6 +90,8 @@ export interface PageDoc extends Document {
 		structuredData?: boolean; // true if JSON-LD is present
 	};
 
+	outgoingLinks?: string[]; // List of absolute URLs linked from this page
+
  	// Images metadata (lightweight)
  	imagesMeta?: {
  		total?: number;

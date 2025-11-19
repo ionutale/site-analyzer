@@ -70,6 +70,34 @@
 
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<div class="rounded bg-base-200 p-3">
+				<h3 class="mb-2 text-lg font-medium">Links</h3>
+				<div class="text-sm">
+					<p><strong>Outgoing Links:</strong> {page.outgoingLinks?.length ?? 0}</p>
+					<details class="mt-1">
+						<summary class="cursor-pointer text-blue-600">Show Outgoing Links</summary>
+						<ul class="ml-4 list-disc max-h-40 overflow-y-auto">
+							{#each page.outgoingLinks || [] as link}
+								<li class="truncate"><a href={link} target="_blank" rel="noopener" class="link">{link}</a></li>
+							{/each}
+						</ul>
+					</details>
+				</div>
+				<div class="text-sm mt-4">
+					<p><strong>Linked From (Backlinks):</strong> {page.linkedFrom?.length ?? 0}</p>
+					{#if page.linkedFrom?.length}
+						<ul class="ml-4 list-disc max-h-40 overflow-y-auto">
+							{#each page.linkedFrom as backlink}
+								<li class="truncate">
+									<a href={backlink.url} target="_blank" rel="noopener" class="link">{backlink.title || backlink.url}</a>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="text-xs opacity-70">No internal pages link to this URL.</p>
+					{/if}
+				</div>
+			</div>
+			<div class="rounded bg-base-200 p-3">
 				<h3 class="mb-2 text-lg font-medium">Accessibility</h3>
 				<ul class="ml-5 list-disc">
 					<li>Images missing alt: <strong>{page.a11y?.imagesMissingAlt ?? 0}</strong>

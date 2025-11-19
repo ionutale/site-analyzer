@@ -117,6 +117,11 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 				(a) => !(a.textContent && a.textContent.trim()) && !(a.getAttribute('aria-label') || '').trim()
 			).length;
 			
+			const outgoingLinks = Array.from(new Set(anchors
+				.map(a => a.href)
+				.filter(href => href && !href.startsWith('javascript:') && !href.startsWith('mailto:') && !href.startsWith('tel:'))
+			));
+			
 			// H-tag analysis
 			const hTags = {
 				h1: document.querySelectorAll('h1').length,
@@ -150,7 +155,8 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 			return {
 				a11y: { imagesMissingAlt, imagesMissingAltUrls, anchorsWithoutText, h1Count },
 				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large },
-				seo: { hTags, structureIssues: uniqueStructureIssues, structuredData }
+				seo: { hTags, structureIssues: uniqueStructureIssues, structuredData },
+				outgoingLinks
 			};
 		}, { minW: LARGE_IMG_MIN_W, minH: LARGE_IMG_MIN_H, minArea: LARGE_IMG_MIN_AREA });
 
@@ -205,6 +211,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 					contentHash: hash,
 					screenshotPath,
 					...analysisResult,
+					outgoingLinks: analysisResult.outgoingLinks,
 					seo: {
 						...analysisResult.seo,
 						metaDescriptionLength,

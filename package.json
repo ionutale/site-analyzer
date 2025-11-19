@@ -24,6 +24,7 @@
 		"fast-xml-parser": "^4.5.1",
 		"firebase": "^10.12.4",
 		"install": "^0.13.0",
+		"lighthouse": "^13.0.1",
 		"mongodb": "^6.10.0",
 		"p-limit": "^6.2.0",
 		"sanitize-html": "^2.13.0",
