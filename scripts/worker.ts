@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { chromium, type Browser } from 'playwright';
 import pLimit from 'p-limit';
 import crypto from 'node:crypto';
@@ -34,7 +35,7 @@ async function checkSchedules() {
 
 		for (const site of dueSites) {
 			const lastRun = site.lastScheduledRun || site.createdAt;
-			let nextRun = new Date(lastRun);
+			const nextRun = new Date(lastRun);
 			
 			if (site.schedule === 'daily') nextRun.setDate(nextRun.getDate() + 1);
 			else if (site.schedule === 'weekly') nextRun.setDate(nextRun.getDate() + 7);

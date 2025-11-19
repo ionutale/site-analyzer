@@ -1,18 +1,16 @@
 import { MongoClient } from 'mongodb';
 import type { Db, Collection, Document } from 'mongodb';
-import { env } from '$env/dynamic/private';
 
 let clientPromise: Promise<MongoClient> | null = null;
 let dbInstance: Db | null = null;
 let indexesEnsured = false;
 
 const getMongoUri = (): string => {
-	const uri = env.MONGODB_URI || 'mongodb://localhost:27017';
-	return uri;
+	return process.env.MONGODB_URI || 'mongodb://localhost:27017';
 };
 
 const getDbName = (): string => {
-	return env.MONGODB_DB || 'sv-app';
+	return process.env.MONGODB_DB || 'sv-app';
 };
 
 export async function getClient(): Promise<MongoClient> {

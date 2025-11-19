@@ -35,21 +35,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		// First URL gets latest ts, last URL gets earliest.
 		const ts = new Date(now.getTime() + (total - 1 - i));
 		return {
-		updateOne: {
-			filter: { siteId, url },
-			update: {
-				$setOnInsert: {
-					siteId,
-					url,
-					status: 'pending' as const,
-					attempts: 0,
-					createdAt: ts
+			updateOne: {
+				filter: { siteId, url },
+				update: {
+					$setOnInsert: {
+						siteId,
+						url,
+						status: 'pending' as const,
+						attempts: 0,
+						createdAt: ts
+					},
+					$set: { updatedAt: ts }
 				},
-				$set: { updatedAt: ts }
-			},
-			upsert: true
-		}
-	};
+				upsert: true
+			}
+		};
 	});
 
 	const coll = await links();
