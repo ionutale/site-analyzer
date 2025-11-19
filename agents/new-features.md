@@ -18,7 +18,7 @@ This document aggregates implemented items and proposed follow-ups captured duri
 	- Ingest assigns per-URL `createdAt`/`updatedAt` to preserve sitemap/UI order (default sort: updatedAt desc)
 	- Worker leases newest-first `{ createdAt: -1, updatedAt: -1, _id: -1 }` so processing matches rendered order
 
-- Worker and dev endpoint
+	- Worker and dev endpoint
 	- Concurrency driven by `CONCURRENT_WORKERS` (prefers this over legacy `WORKER_CONCURRENCY`)
 	- Worker startup log prints headless, concurrency, attempts, lease timeout, screenshots dir
 	- Dev endpoint `/api/process-batch` now leases up to `count` and processes concurrently using one browser
@@ -53,4 +53,12 @@ This document aggregates implemented items and proposed follow-ups captured duri
 - Gate privileged Analyzer actions behind auth in UI (retry/purge/reset), with inline prompts
 - Add route guarding for all pages except landing/login using SvelteKit handle/layout
 - Optional: overview endpoint for home aggregates to reduce client-side work
+
+## Essential Features for Success
+
+- **Export & Reporting System**: Generate professional PDF/CSV reports of audit results for stakeholders, including executive summaries and detailed issue lists.
+- **Automated/Scheduled Monitoring**: Configure daily, weekly, or monthly automatic re-scans to track site health and SEO improvements over time.
+- **Performance & Core Web Vitals**: Integrate Lighthouse or similar tools to measure FCP, LCP, CLS, and Speed Index alongside standard SEO metrics.
+- **Advanced Content Analysis**: Expand checks to include H-tag hierarchy validation, missing alt text detection, meta description analysis, and structured data validation.
+- **Link Source & Graph Visualization**: Provide a visual site tree to understand architecture and a detailed "Linked From" report to easily locate and fix broken links.
 
