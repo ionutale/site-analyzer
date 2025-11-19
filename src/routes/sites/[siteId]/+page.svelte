@@ -168,6 +168,7 @@
 					<li><button onclick={() => resume('retry-errors')}>Retry errors</button></li>
 				</ul>
 			</div>
+			<a class="btn btn-sm" href={`/api/export?siteId=${encodeURIComponent(siteId)}&format=csv`} download>Export CSV</a>
 			<button class="btn btn-primary btn-sm" onclick={refetchSite}>Refetch</button>
 			{#if dev}
 				<button class="btn btn-error btn-sm" onclick={resetSite}>Reset</button>

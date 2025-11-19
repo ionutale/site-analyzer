@@ -69,9 +69,26 @@ export interface PageDoc extends Document {
 	// Accessibility quick metrics
 	a11y?: {
  		imagesMissingAlt?: number;
+		imagesMissingAltUrls?: string[]; // New: list of images missing alt text
  		anchorsWithoutText?: number;
  		h1Count?: number;
  	};
+
+	// SEO & Content Analysis
+	seo?: {
+		hTags?: {
+			h1: number;
+			h2: number;
+			h3: number;
+			h4: number;
+			h5: number;
+			h6: number;
+		};
+		structureIssues?: string[]; // e.g. "Missing H1", "Multiple H1", "Skipped heading level"
+		metaDescriptionLength?: number;
+		metaDescriptionIssues?: string[]; // e.g. "Too short", "Too long", "Missing"
+		structuredData?: boolean; // true if JSON-LD is present
+	};
 
  	// Images metadata (lightweight)
  	imagesMeta?: {

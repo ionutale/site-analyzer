@@ -72,10 +72,47 @@
 			<div class="rounded bg-base-200 p-3">
 				<h3 class="mb-2 text-lg font-medium">Accessibility</h3>
 				<ul class="ml-5 list-disc">
-					<li>Images missing alt: <strong>{page.a11y?.imagesMissingAlt ?? 0}</strong></li>
+					<li>Images missing alt: <strong>{page.a11y?.imagesMissingAlt ?? 0}</strong>
+						{#if page.a11y?.imagesMissingAltUrls?.length}
+							<ul class="ml-4 list-disc text-xs text-error">
+								{#each page.a11y.imagesMissingAltUrls as url}
+									<li class="truncate" title={url}>{url}</li>
+								{/each}
+							</ul>
+						{/if}
+					</li>
 					<li>Anchors without text: <strong>{page.a11y?.anchorsWithoutText ?? 0}</strong></li>
 					<li>H1 count: <strong>{page.a11y?.h1Count ?? 0}</strong></li>
 				</ul>
+			</div>
+			<div class="rounded bg-base-200 p-3">
+				<h3 class="mb-2 text-lg font-medium">SEO & Content</h3>
+				<ul class="ml-5 list-disc">
+					<li>Title length: <strong>{page.titleLength ?? 0}</strong> chars</li>
+					<li>Meta description: <strong>{page.seo?.metaDescriptionLength ?? 0}</strong> chars
+						{#if page.seo?.metaDescriptionIssues?.length}
+							<span class="text-error text-xs">({page.seo.metaDescriptionIssues.join(', ')})</span>
+						{/if}
+					</li>
+					<li>Word count: <strong>{page.wordCount ?? 0}</strong></li>
+					<li>Structured Data: <strong>{page.seo?.structuredData ? 'Yes' : 'No'}</strong></li>
+				</ul>
+				<h4 class="mt-2 font-semibold">Heading Structure</h4>
+				<div class="grid grid-cols-3 gap-1 text-sm">
+					{#each Object.entries(page.seo?.hTags || {}) as [tag, count]}
+						<div>{tag.toUpperCase()}: <strong>{count}</strong></div>
+					{/each}
+				</div>
+				{#if page.seo?.structureIssues?.length}
+					<div class="mt-2 text-error text-sm">
+						<strong>Issues:</strong>
+						<ul class="list-disc ml-4">
+							{#each page.seo.structureIssues as issue}
+								<li>{issue}</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
 			</div>
 			<div class="rounded bg-base-200 p-3">
 				<h3 class="mb-2 text-lg font-medium">Images</h3>

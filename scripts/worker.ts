@@ -77,7 +77,7 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 		const textContent = await pg.evaluate(() => (document?.body?.innerText || '').trim());
 
 		// Accessibility + images quick checks in the page context
-		const a11yAndImages = await pg.evaluate((thresholds) => {
+		const analysisResult = await pg.evaluate((thresholds) => {
 			function extFromUrl(u: string): string {
 				try {
 					const url = new URL(u, location.href);
@@ -96,6 +96,8 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 				h: (img as HTMLImageElement).naturalHeight || 0
 			}));
 			const imagesMissingAlt = imgs.filter((i) => !i.alt || !i.alt.trim()).length;
+			const imagesMissingAltUrls = imgs.filter((i) => !i.alt || !i.alt.trim()).map(i => i.src).slice(0, 10);
+
 			const total = imgs.length;
 			const counts: Record<string, number> = { avif: 0, webp: 0, jpeg: 0, jpg: 0, png: 0, gif: 0, svg: 0, other: 0 };
 			const large: string[] = [];
@@ -114,11 +116,41 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 			const anchorsWithoutText = anchors.filter(
 				(a) => !(a.textContent && a.textContent.trim()) && !(a.getAttribute('aria-label') || '').trim()
 			).length;
-			const h1Count = document.querySelectorAll('h1').length;
+			
+			// H-tag analysis
+			const hTags = {
+				h1: document.querySelectorAll('h1').length,
+				h2: document.querySelectorAll('h2').length,
+				h3: document.querySelectorAll('h3').length,
+				h4: document.querySelectorAll('h4').length,
+				h5: document.querySelectorAll('h5').length,
+				h6: document.querySelectorAll('h6').length,
+			};
+			const h1Count = hTags.h1;
+
+			const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+            const structureIssues: string[] = [];
+            if (hTags.h1 === 0) structureIssues.push('Missing H1');
+            if (hTags.h1 > 1) structureIssues.push('Multiple H1');
+            
+            let lastLevel = 0;
+            headings.forEach(h => {
+                const level = parseInt(h.tagName.substring(1));
+				// Check for skipped levels (e.g. H1 -> H3), but allow starting with any level if it's the first one (though usually should be H1)
+				if (lastLevel > 0 && level > lastLevel + 1) {
+                    structureIssues.push(`Skipped heading level: H${lastLevel} -> H${level}`);
+                }
+                lastLevel = level;
+            });
+			const uniqueStructureIssues = [...new Set(structureIssues)];
+
+			// Structured data
+			const structuredData = !!document.querySelector('script[type="application/ld+json"]');
 
 			return {
-				a11y: { imagesMissingAlt, anchorsWithoutText, h1Count },
-				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large }
+				a11y: { imagesMissingAlt, imagesMissingAltUrls, anchorsWithoutText, h1Count },
+				imagesMeta: { total, counts, largeDimensions: large.length, sampleLarge: large },
+				seo: { hTags, structureIssues: uniqueStructureIssues, structuredData }
 			};
 		}, { minW: LARGE_IMG_MIN_W, minH: LARGE_IMG_MIN_H, minArea: LARGE_IMG_MIN_AREA });
 
@@ -128,6 +160,13 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 		const contentLength = html.length;
 		const wordCount = (textContent || '').split(/\s+/).filter(Boolean).length;
 		const titleLength = (title || '').length;
+
+		// Meta description analysis
+		const metaDescriptionLength = (metaDescription || '').length;
+		const metaDescriptionIssues: string[] = [];
+		if (!metaDescription) metaDescriptionIssues.push('Missing');
+		else if (metaDescriptionLength < 50) metaDescriptionIssues.push('Too short (<50 chars)');
+		else if (metaDescriptionLength > 160) metaDescriptionIssues.push('Too long (>160 chars)');
 
 		let screenshotPath: string | null = null;
 		if (SCREENSHOTS) {
@@ -165,7 +204,12 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 					wordCount,
 					contentHash: hash,
 					screenshotPath,
-					...a11yAndImages,
+					...analysisResult,
+					seo: {
+						...analysisResult.seo,
+						metaDescriptionLength,
+						metaDescriptionIssues
+					},
 					ingestId: (doc as unknown as { ingestId?: string | null }).ingestId ?? null,
 					ingestedAt: now
 				} satisfies Partial<PageDoc>
