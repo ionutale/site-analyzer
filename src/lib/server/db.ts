@@ -92,6 +92,16 @@ export interface PageDoc extends Document {
 
 	outgoingLinks?: string[]; // List of absolute URLs linked from this page
 
+	// Performance / Lighthouse
+	performance?: {
+		score?: number; // 0-100
+		fcp?: number; // First Contentful Paint (ms)
+		lcp?: number; // Largest Contentful Paint (ms)
+		cls?: number; // Cumulative Layout Shift
+		speedIndex?: number;
+		auditedAt?: Date;
+	};
+
  	// Images metadata (lightweight)
  	imagesMeta?: {
  		total?: number;
@@ -103,6 +113,13 @@ export interface PageDoc extends Document {
  	};
 }
 
+export interface SiteDoc extends Document {
+	siteId: string; // unique index
+	createdAt: Date;
+	schedule?: 'manual' | 'daily' | 'weekly' | 'monthly';
+	lastScheduledRun?: Date;
+}
+
 export async function links(): Promise<Collection<LinkDoc>> {
 	const db = await getDb();
 	return db.collection<LinkDoc>('links');
@@ -111,6 +128,11 @@ export async function links(): Promise<Collection<LinkDoc>> {
 export async function pages(): Promise<Collection<PageDoc>> {
 	const db = await getDb();
 	return db.collection<PageDoc>('pages');
+}
+
+export async function sites(): Promise<Collection<SiteDoc>> {
+	const db = await getDb();
+	return db.collection<SiteDoc>('sites');
 }
 
 async function ensureIndexes(db: Db): Promise<void> {
@@ -132,5 +154,8 @@ async function ensureIndexes(db: Db): Promise<void> {
 			partialFilterExpression: { contentHash: { $exists: true } }
 		}
 	]);
+
+	await db.collection<SiteDoc>('sites').createIndex({ siteId: 1 }, { unique: true });
+
 	indexesEnsured = true;
 }

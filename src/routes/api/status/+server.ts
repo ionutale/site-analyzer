@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import { links } from '$lib/server/db';
+import { links, sites } from '$lib/server/db';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const siteId = url.searchParams.get('siteId');
@@ -8,6 +8,10 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	const coll = await links();
 	const pipeline = [{ $match: { siteId } }, { $group: { _id: '$status', count: { $sum: 1 } } }];
+
+	const sColl = await sites();
+	const siteDoc = await sColl.findOne({ siteId });
+	const schedule = siteDoc?.schedule || 'manual';
 
 	const stats = new Map<string, number>();
 	for await (const doc of coll.aggregate<{ _id: string; count: number }>(pipeline)) {
@@ -20,5 +24,5 @@ export const GET: RequestHandler = async ({ url }) => {
 	const error = stats.get('error') || 0;
 	const total = pending + in_progress + done + error;
 
-	return json({ siteId, pending, in_progress, done, error, total });
+	return json({ siteId, pending, in_progress, done, error, total, schedule });
 };

@@ -2,7 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { collectSitemapUrls, normalizeSiteId } from '$lib/server/sitemap';
-import { links } from '$lib/server/db';
+import { links, sites } from '$lib/server/db';
 import type { BulkWriteResult } from 'mongodb';
 
 const BodySchema = z.object({ siteUrl: z.string().url() });
@@ -16,6 +16,14 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const { siteUrl } = parsed.data;
 	const siteId = normalizeSiteId(siteUrl);
+
+	// Ensure site doc exists
+	const sColl = await sites();
+	await sColl.updateOne(
+		{ siteId },
+		{ $setOnInsert: { siteId, createdAt: new Date(), schedule: 'manual' } },
+		{ upsert: true }
+	);
 
 	// Collect URLs from sitemap(s)
 	const urls = await collectSitemapUrls(siteUrl);

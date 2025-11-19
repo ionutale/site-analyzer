@@ -16,6 +16,7 @@
 		done: number;
 		error: number;
 		total: number;
+		schedule?: string;
 	} | null>(null);
 	type LinkItem = {
 		_id: string;
@@ -56,6 +57,24 @@
 		const res = await fetch(`/api/status?siteId=${encodeURIComponent(siteId)}`);
 		if (res.ok) stats = await res.json();
 	}
+
+	async function updateSchedule(e: Event) {
+		const schedule = (e.target as HTMLSelectElement).value;
+		try {
+			const res = await fetch('/api/schedule', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId, schedule })
+			});
+			if (!res.ok) throw new Error('Failed to update schedule');
+			toasts.success(`Schedule updated to: ${schedule}`);
+			await fetchStatus();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Unknown error';
+			toasts.error(`Schedule update failed: ${msg}`);
+		}
+	}
+
 	async function fetchLinks() {
 		const qp = new URLSearchParams({
 			siteId,
@@ -160,6 +179,15 @@
 	<div class="flex items-center justify-between">
 		<h1 class="text-3xl font-bold">Site: <code>{siteId}</code></h1>
 		<div class="flex flex-wrap items-center gap-2">
+			<div class="form-control flex-row items-center gap-2">
+				<span class="label-text font-medium">Schedule:</span>
+				<select class="select select-sm select-bordered" value={stats?.schedule || 'manual'} onchange={updateSchedule}>
+					<option value="manual">Manual</option>
+					<option value="daily">Daily</option>
+					<option value="weekly">Weekly</option>
+					<option value="monthly">Monthly</option>
+				</select>
+			</div>
 			<a class="btn btn-ghost btn-sm" href={resolve(`/sites/${siteId}/seo`)}>SEO</a>
 			<div class="dropdown dropdown-end">
 				<button class="btn btn-sm" aria-haspopup="menu" aria-label="Resume options">Resume</button>

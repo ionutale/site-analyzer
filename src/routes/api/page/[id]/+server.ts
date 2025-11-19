@@ -58,6 +58,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		},
 		outgoingLinks: doc.outgoingLinks ?? [],
 		linkedFrom,
+		performance: doc.performance ?? null,
 		imagesMeta: {
 			total: doc.imagesMeta?.total ?? 0,
 			counts: {

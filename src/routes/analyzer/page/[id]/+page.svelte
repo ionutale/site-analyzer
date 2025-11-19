@@ -6,6 +6,8 @@
 
 	let busy = $state(false);
 	let busyNow = $state(false);
+	let busyAudit = $state(false);
+
 	async function reprocess() {
 		if (!page) return;
 		try {
@@ -43,6 +45,26 @@
 			busyNow = false;
 		}
 	}
+
+	async function runAudit() {
+		if (!page) return;
+		try {
+			busyAudit = true;
+			const res = await fetch('/api/audit-performance', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ siteId: page.siteId, url: page.url })
+			});
+			if (!res.ok) throw new Error('Failed to run audit');
+			const data = await res.json();
+			toasts.success(`Audit complete. Score: ${Math.round(data.performance.score)}`);
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : 'Unknown error';
+			toasts.error(`Audit failed: ${msg}`);
+		} finally {
+			busyAudit = false;
+		}
+	}
 </script>
 
 <section class="mx-auto max-w-4xl space-y-4 p-4">
@@ -57,8 +79,23 @@
 			<div class="flex gap-2">
 				<button class="btn btn-primary btn-sm" onclick={reprocess} disabled={busy}>Reprocess</button>
 				<button class="btn btn-secondary btn-sm" onclick={processNow} disabled={busyNow}>Process now (dev)</button>
+				<button class="btn btn-accent btn-sm" onclick={runAudit} disabled={busyAudit}>Run Performance Audit</button>
 			</div>
 		</div>
+
+		{#if page.performance}
+			<div class="alert alert-info shadow-lg">
+				<div>
+					<h3 class="font-bold">Performance Score: {Math.round(page.performance.score)}</h3>
+					<div class="text-xs">Audited: {new Date(page.performance.auditedAt).toLocaleString()}</div>
+				</div>
+				<div class="flex gap-4 text-sm">
+					<div>FCP: {Math.round(page.performance.fcp)}ms</div>
+					<div>LCP: {Math.round(page.performance.lcp)}ms</div>
+					<div>CLS: {page.performance.cls.toFixed(3)}</div>
+				</div>
+			</div>
+		{/if}
 
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 			<div class="rounded bg-base-200 p-2">Status: <strong>{page.statusCode ?? 'n/a'}</strong></div>

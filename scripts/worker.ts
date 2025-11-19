@@ -3,7 +3,7 @@ import pLimit from 'p-limit';
 import crypto from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { links, pages, type LinkDoc, type PageDoc } from '../src/lib/server/db';
+import { links, pages, sites, type LinkDoc, type PageDoc } from '../src/lib/server/db';
 
 const HEADLESS = (process.env.PLAYWRIGHT_HEADLESS || 'true') !== 'false';
 // Prefer CONCURRENT_WORKERS, fall back to legacy WORKER_CONCURRENCY for backward compatibility
@@ -21,12 +21,57 @@ const LARGE_IMG_MIN_W = Number(process.env.LARGE_IMG_MIN_W || '1600');
 const LARGE_IMG_MIN_H = Number(process.env.LARGE_IMG_MIN_H || '1600');
 const LARGE_IMG_MIN_AREA = Number(process.env.LARGE_IMG_MIN_AREA || '2000000');
 
-// Startup config log for visibility
-console.info(
-	`[worker] headless=${HEADLESS} concurrency=${CONCURRENCY} maxAttempts=${MAX_ATTEMPTS} leaseTimeoutMs=${LEASE_TIMEOUT_MS} screenshots=${SCREENSHOTS ? 'on' : 'off'}${
-		SCREENSHOTS ? ` dir=${SCREENSHOTS_DIR}` : ''
-	} largeImageThresholds={w>=${LARGE_IMG_MIN_W}, h>=${LARGE_IMG_MIN_H}, area>=${LARGE_IMG_MIN_AREA}}`
-);
+// Scheduler config
+const SCHEDULER_INTERVAL_MS = 60000; // Check every minute
+
+async function checkSchedules() {
+	try {
+		const sColl = await sites();
+		const now = new Date();
+		const dueSites = await sColl.find({
+			schedule: { $in: ['daily', 'weekly', 'monthly'] }
+		}).toArray();
+
+		for (const site of dueSites) {
+			const lastRun = site.lastScheduledRun || site.createdAt;
+			let nextRun = new Date(lastRun);
+			
+			if (site.schedule === 'daily') nextRun.setDate(nextRun.getDate() + 1);
+			else if (site.schedule === 'weekly') nextRun.setDate(nextRun.getDate() + 7);
+			else if (site.schedule === 'monthly') nextRun.setMonth(nextRun.getMonth() + 1);
+
+			if (now >= nextRun) {
+				console.log(`[scheduler] Triggering scheduled run for ${site.siteId}`);
+				
+				// Trigger refetch logic (simplified version of /api/refetch-site)
+				const lColl = await links();
+				const ingestId = crypto.randomUUID();
+				
+				// Reset all links to pending
+				await lColl.updateMany(
+					{ siteId: site.siteId },
+					{
+						$set: {
+							status: 'pending',
+							updatedAt: now,
+							ingestId
+						},
+						$unset: { leasedAt: '', lastError: '' },
+						$inc: { attempts: 0 } // just to touch the doc if needed
+					}
+				);
+
+				// Update lastScheduledRun
+				await sColl.updateOne(
+					{ siteId: site.siteId },
+					{ $set: { lastScheduledRun: now } }
+				);
+			}
+		}
+	} catch (e) {
+		console.error('[scheduler] Error:', e);
+	}
+}
 
 async function leaseOne(): Promise<LinkDoc | null> {
 	const coll = await links();
@@ -255,6 +300,11 @@ async function processLink(b: Browser, doc: LinkDoc): Promise<void> {
 async function run() {
 	const limit = pLimit(CONCURRENCY);
 	const browser = await chromium.launch({ headless: HEADLESS });
+
+	// Start scheduler loop
+	setInterval(checkSchedules, SCHEDULER_INTERVAL_MS);
+	checkSchedules(); // Run once immediately
+
 	try {
 		while (true) {
 			const batch: LinkDoc[] = [];

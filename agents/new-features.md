@@ -62,3 +62,30 @@ This document aggregates implemented items and proposed follow-ups captured duri
 - **Advanced Content Analysis**: Expand checks to include H-tag hierarchy validation, missing alt text detection, meta description analysis, and structured data validation.
 - **Link Source & Graph Visualization**: Provide a visual site tree to understand architecture and a detailed "Linked From" report to easily locate and fix broken links.
 
+## Implemented Essential Features
+
+- **Export & Reporting System**
+	- Added `/api/export` endpoint for CSV export of site audits.
+	- Added "Export CSV" button to Site Dashboard.
+
+- **Automated/Scheduled Monitoring**
+	- Added `sites` collection to store schedule configuration.
+	- Implemented scheduler in `worker.ts` to check for due sites every minute.
+	- Added UI controls in Site Dashboard to set schedule (Manual, Daily, Weekly, Monthly).
+
+- **Performance & Core Web Vitals**
+	- Integrated `lighthouse` for on-demand performance audits.
+	- Added "Run Performance Audit" button to Page Details.
+	- Displays FCP, LCP, CLS, and Speed Index scores.
+
+- **Advanced Content Analysis**
+	- Expanded worker to analyze H-tag structure (missing H1, skipped levels).
+	- Added checks for Meta Description length and issues.
+	- Added detection of Structured Data (JSON-LD).
+	- Updated Page Details UI to show these new metrics.
+
+- **Link Source & Graph Visualization**
+	- Worker now extracts all outgoing links.
+	- Page Details UI shows "Outgoing Links" list.
+	- Page Details UI shows "Linked From (Backlinks)" list (reverse lookup of internal links).
+
